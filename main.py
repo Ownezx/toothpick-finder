@@ -4,12 +4,11 @@ import cv2
 import numpy as np
 import os
 
-workdir: str = "Images/"
-output_dir: str = "Output/"
+workdir: str = "images/"
+output_dir: str = "output/"
 
 
 file_list = os.listdir(workdir)
-
 
 for file in file_list:
 
@@ -28,3 +27,5 @@ for file in file_list:
 
     # save resulting image
     cv2.imwrite(output_dir + file, image)
+
+# %%
