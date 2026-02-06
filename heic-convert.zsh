@@ -28,8 +28,10 @@ fi
 for file in "${files[@]}"; do
     output="${file:r}.jpg"
 
-    echo "Converting: $(basename "$file")"
-    sips -s format jpeg "$file" --out "$output" >/dev/null
+    echo "Converting and rotating: $(basename "$file")"
+
+    # Convert HEIC to JPEG and auto-apply EXIF rotation
+    magick "$file" -auto-orient "$output"
 done
 
 echo
