@@ -3,12 +3,10 @@ import pycolmap
 from pycolmap import Camera
 from pycolmap import Image
 from pycolmap import CameraModelId
-from pycolmap import FeatureKeypoint
 from pathlib import Path
 import numpy as np
-import stag
-import cv2
-import sqlite3
+import apriltag # type: ignore
+import cv2 # type: ignore
 
 # Define paths
 project_dir = Path("colmap_project")
@@ -21,7 +19,7 @@ project_dir.mkdir(parents=True, exist_ok=True)
 sparse_path.mkdir(exist_ok=True)
 
 # Create an empty COLMAP database
-db = pycolmap.Database(str(database_path))
+db = pycolmap.Database()
 db.clear_images()
 db.clear_cameras()
 db.clear_keypoints()
