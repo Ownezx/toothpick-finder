@@ -1,5 +1,12 @@
 .venv
+images
 
+# Colmap things
+*.db
+*.db-shm
+*.db-wal
+
+#images
 *.pdf
 *.png
 *.heic
