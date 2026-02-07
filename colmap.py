@@ -28,9 +28,19 @@ db.clear_images()
 db.clear_cameras()
 db.clear_keypoints()
 db.clear_matches()
+db.clear_descriptors()
 
 # Setup april tag detector
 detector = apriltag.apriltag('tagStandard41h12', threads=4)
+
+sift = cv2.SIFT.create(
+    nfeatures=0,          # max number of keypoints to retain (0 = unlimited)
+    nOctaveLayers=3,      # number of layers per octave
+    contrastThreshold=0.04,
+    edgeThreshold=10,
+    sigma=1.6,
+    # enable_precise_upscale is optional (OpenCV 4.5+)
+)
 
 #%%
 
@@ -69,8 +79,24 @@ for index, image_path in enumerate(image_files):
 
     if all_keypoints:
         keypoints_arr = np.vstack(all_keypoints)
+        num_keypoints = keypoints_arr.shape[0]
+
+        # Convert COLMAP keypoints to OpenCV KeyPoint objects (correct positional args)
+        cv_keypoints = [cv2.KeyPoint(float(k[0]), float(k[1]), float(k[2]), float(k[3])) 
+                        for k in keypoints_arr]
+
+        # Compute descriptors at these keypoints
+        _, descriptors = sift.compute(loaded_image, cv_keypoints)
+
+        # If SIFT fails for some reason, fall back to dummy
+        if descriptors is None:
+            descriptors = np.ones((num_keypoints, 128), dtype=np.float32)
+
+        # Write keypoints and real descriptors to database
         db.write_keypoints(image_id, keypoints_arr)
-        print(f"Wrote {len(keypoints_arr)} keypoints for {image_path.name}")
+        db.write_descriptors(image_id, descriptors.astype(np.float32))
+        print(f"Wrote {len(keypoints_arr)} keypoints for {image_path.name}, id: {image_id}")
+
         if False: 
             print(keypoints_arr)
             debug_image = cv2.cvtColor(loaded_image, cv2.COLOR_GRAY2BGR)
