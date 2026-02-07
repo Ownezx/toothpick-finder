@@ -11,6 +11,11 @@ Just a repo for a botanist to find toothpicks in grass with a precision of (hope
 
 ### Running from source
 
+OSX:
+- Install colmap `brew install colmap`
+- Make the `pycolmap_regen.zsh` and `start_colmap.zsh` executable with `chmod +x`
+- Run `pycolmap_regen.zsh`  
+
 ### Fiducial marker generation
 
 - Download HD19 fiducial markers from https://github.com/ManfredStoiber/stag-python, a link is present in their readme

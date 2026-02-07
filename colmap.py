@@ -29,6 +29,7 @@ db.clear_cameras()
 db.clear_keypoints()
 db.clear_matches()
 db.clear_descriptors()
+db.clear_two_view_geometries()
 
 # Setup april tag detector
 detector = apriltag.apriltag('tagStandard41h12', threads=4)
@@ -48,6 +49,7 @@ sift = cv2.SIFT.create(
 camera:Camera = Camera.create(1,CameraModelId.PINHOLE,4.2,5712,4284)
 camera_id = db.write_camera(camera)
 
+
 image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 image_files = sorted(
     [f for f in images_dir.iterdir() if f.suffix.lower() in image_extensions]
@@ -59,6 +61,7 @@ if not image_files:
 # This remembers the image/keypoint ids for each AprilTag so matching is possible
 # Structure: point_dictionary[tag_id][image_id] = (kp1, kp2, kp3, kp4)
 point_dictionary: Dict[int, Dict[int, Tuple[int, int, int, int]]] = defaultdict(dict)
+image_keypoints: Dict[int, np.ndarray] = defaultdict(dict)
 
 for index, image_path in enumerate(image_files):
     image:Image = Image(image_path.name,camera_id=camera_id)
@@ -96,6 +99,8 @@ for index, image_path in enumerate(image_files):
         db.write_keypoints(image_id, keypoints_arr)
         db.write_descriptors(image_id, descriptors.astype(np.float32))
         print(f"Wrote {len(keypoints_arr)} keypoints for {image_path.name}, id: {image_id}")
+
+        image_keypoints[image_id] = keypoints_arr[:, :2].astype(np.float64)
 
         if False: 
             print(keypoints_arr)
@@ -136,11 +141,22 @@ for (img1, img2), matches_list in pair_matches.items():
     if len(matches_arr) > 0:
         db.write_matches(img1, img2, matches_arr)
 
+        pts1 = image_keypoints[img1]
+        pts2 = image_keypoints[img2]
+        # Estimate verified two view geometry
+        tvg = pycolmap.estimate_two_view_geometry(
+            camera,
+            pts1,
+            camera,
+            pts2,
+            matches_arr
+        )
+        db.write_two_view_geometry(img1,img2,tvg)
+
         print(
             f"Wrote {len(matches_arr)} matches between "
             f"{img1} and {img2}"
         )
-
 
 db.close()
 
