@@ -1,10 +1,39 @@
 # type: ignore
 import cv2
 import numpy as np
+import argparse
+
+
+def get_arguments():
+    parser = argparse.ArgumentParser(
+        description="This command line tool allows to detect toothpics in pictures."
+    )
+
+    parser.add_argument(
+        "-i", "--input-folder",
+        required=True,
+        help="Path to the input folder or image. It will only take .jpg"
+    )
+
+    parser.add_argument(
+        "-o", "--output",
+        default="tf_detect_output",
+        help="Output file (default: %(default)s)"
+    )
+    parser.add_argument(
+        "-e", "--export-image",
+        action="store_true",
+        help="Exports images with the detected toothpick in the ouput (otherwise just saves the segment data)"
+    )
+
+    return parser.parse_args()
+
 
 def main_cli():
+    launch_arguments = get_arguments()
+
     print("lel")
-    #test()
+    test()
 
 
 def test():
