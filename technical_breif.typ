@@ -1,7 +1,7 @@
 // For work notes
-#import "@preview/drafting:0.2.2": margin-note, inline-note
+#import "@preview/drafting:0.2.2": inline-note, margin-note
 #import "@preview/chronos:0.2.1"
-#import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
+#import "@preview/fletcher:0.5.8" as fletcher: diagram, edge, node
 #import fletcher.shapes: house
 
 // Font and text size example
@@ -118,7 +118,7 @@ There are three roles for these fiducial markers:
 + Define the plot area for measurements
 + Allow a pre-computing camera position using overlapping tags
 
-Although STag was tested initially, their software was unreliable in their python wrapper.
+Although STag was tested initially, the python wrapper was not reliable and was causing segfaults @benligiraySTagStableFiducial2019.
 
 == 1D Node position markers
 
@@ -149,6 +149,5 @@ LIMAP: @Liu_2023_LIMAP
 
 == Node position estimation
 
+
 #bibliography("refs.bib")
-
-
