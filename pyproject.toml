@@ -30,5 +30,5 @@ cli = [
 Repository = "https://github.com/Ownezx/toothpick-finder"
 "Bug Tracker" = "https://github.com/Ownezx/toothpick-finder/issues"
 
-#[project.scripts]
-#spam-cli = "spam:main_cli"
+[project.scripts]
+tf-detect = "detect_toothpick:main_cli"
