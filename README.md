@@ -13,6 +13,7 @@ Just a repo for a botanist to find toothpicks in grass with a precision of (hope
 
 OSX:
 - Install colmap `brew install colmap`
+- Install python3.14 + and install the required depencencies defined in the pyproject `pip install .`
 - Make the `pycolmap_regen.zsh` and `start_colmap.zsh` executable with `chmod +x`
 - Run `pycolmap_regen.zsh`  
 

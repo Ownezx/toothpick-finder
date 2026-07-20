@@ -1,4 +1,0 @@
-apriltag-python==3.4.5
-numpy==2.4.2
-opencv-python==4.13.0.92
-pycolmap==3.13.0
