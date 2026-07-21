@@ -6,7 +6,7 @@
   paper: "a4",
 )
 
-#let source_folder = "apriltag-imgs/tagStandard41h12/"
+#let source_folder = "../apriltag-imgs/tagStandard41h12/"
 #let im_index = range(0, 40)
 #let images = im_index.map(it => if it >= 10 {
   source_folder + "/tag41_12_000" + str(it) + ".png"
