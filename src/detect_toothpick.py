@@ -99,8 +99,7 @@ def main_cli():
     global DEBUG
     DEBUG = launch_arguments.debug
 
-    if Path(launch_arguments.input).is_dir():
-        raise argparse.ArgumentError("Folder are not currently supported.")
+    input_is_dir = Path(launch_arguments.input).is_dir()
 
     if launch_arguments.force:
         shutil.rmtree(OUTPUT_FOLDER)
@@ -113,16 +112,28 @@ def main_cli():
                 "Output folder already exists, if you want to delete folder on launch use -f"
             )
 
-    lines = detect_lines(launch_arguments.input)
+    if not input_is_dir:
+        handle_image(
+            launch_arguments.input,
+            launch_arguments.export_image,
+            launch_arguments.show_images,
+        )
+        return
 
-    out_image = generate_result_image(launch_arguments.input, lines)
+    raise argparse.ArgumentError("Folder are not currently supported.")
 
-    if launch_arguments.export_image:
-        image_name = Path(launch_arguments.input).name
+
+def handle_image(image_path: str, export: bool, show: bool):
+    lines = detect_lines(image_path)
+
+    out_image = generate_result_image(image_path, lines)
+
+    if export:
+        image_name = Path(image_path).name
         logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
 
-    if launch_arguments.show_images:
+    if show:
         show_result(out_image)
 
 
