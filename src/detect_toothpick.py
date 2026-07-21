@@ -25,6 +25,7 @@ DETECT_CONFIG = {
     "minLineLength": 100,
     "maxLineGap": 10,
 }
+"""Default configuration file for toothpick detector"""
 
 
 def get_arguments():
@@ -120,7 +121,13 @@ def main_cli():
         )
         return
 
-    raise argparse.ArgumentError("Folder are not currently supported.")
+    for image in list(Path(launch_arguments.input).glob("*.jpg")):
+        logging.info(f"Handling image {image}.")
+        handle_image(
+            str(image),
+            launch_arguments.export_image,
+            launch_arguments.show_images,
+        )
 
 
 def handle_image(image_path: str, export: bool, show: bool):
