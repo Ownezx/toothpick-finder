@@ -1,6 +1,7 @@
 # type: ignore
 import argparse
 import logging
+import shutil
 from pathlib import Path
 
 import cv2
@@ -9,6 +10,7 @@ from cv2.typing import MatLike
 from numpy._typing import NDArray
 
 WORK_FOLDER = ""
+DEBUG = False
 
 
 def get_arguments():
@@ -52,6 +54,13 @@ def get_arguments():
     )
 
     parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="If the output folder already exists, deletes it without warning before starting.",
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -68,14 +77,27 @@ def main_cli():
     else:
         logging.basicConfig(level=logging.INFO)
 
-    global WORK_FOLDER
     logging.info(f"Staring program with input {launch_arguments.input}")
+
+    global WORK_FOLDER
     WORK_FOLDER = launch_arguments.output
+
+    global DEBUG
+    DEBUG = launch_arguments.debug
 
     if Path(launch_arguments.input).is_dir():
         raise argparse.ArgumentError("Folder are not currently supported.")
 
-    Path(WORK_FOLDER).mkdir(exist_ok=True)
+    if launch_arguments.force:
+        shutil.rmtree(WORK_FOLDER)
+        Path(WORK_FOLDER).mkdir()
+    else:
+        try:
+            Path(WORK_FOLDER).mkdir()
+        except FileExistsError:
+            raise FileExistsError(
+                "Output folder already exists, if you want to delete folder on launch use -f"
+            )
 
     lines = detect_lines(launch_arguments.input)
 
