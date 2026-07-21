@@ -9,8 +9,12 @@ import numpy as np
 from cv2.typing import MatLike
 from numpy._typing import NDArray
 
-WORK_FOLDER = ""
+OUTPUT_FOLDER = ""
+"""Output folder"""
 DEBUG = False
+"""When active, exports extra images for debugging purposes"""
+ALPHA = 0.5
+"""Transparency when overlaying the lines over the images"""
 
 
 def get_arguments():
@@ -79,8 +83,8 @@ def main_cli():
 
     logging.info(f"Staring program with input {launch_arguments.input}")
 
-    global WORK_FOLDER
-    WORK_FOLDER = launch_arguments.output
+    global OUTPUT_FOLDER
+    OUTPUT_FOLDER = launch_arguments.output
 
     global DEBUG
     DEBUG = launch_arguments.debug
@@ -89,11 +93,11 @@ def main_cli():
         raise argparse.ArgumentError("Folder are not currently supported.")
 
     if launch_arguments.force:
-        shutil.rmtree(WORK_FOLDER)
-        Path(WORK_FOLDER).mkdir()
+        shutil.rmtree(OUTPUT_FOLDER)
+        Path(OUTPUT_FOLDER).mkdir()
     else:
         try:
-            Path(WORK_FOLDER).mkdir()
+            Path(OUTPUT_FOLDER).mkdir()
         except FileExistsError:
             raise FileExistsError(
                 "Output folder already exists, if you want to delete folder on launch use -f"
@@ -105,8 +109,8 @@ def main_cli():
 
     if launch_arguments.export_image:
         image_name = Path(launch_arguments.input).name
-        logging.debug(f"Exporting image to {WORK_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{WORK_FOLDER}/{image_name}", out_image)
+        logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
 
     if launch_arguments.show_images:
         show_result(out_image)
@@ -121,19 +125,25 @@ def detect_lines(image_path: str):
     red_channel = loaded_image[:, :, 2]
 
     # Define a threshold (ceil) value
-    ceil_value = 230  # you can change this
+    ceil_value = 240  # you can change this
 
     # Create a binary image: 0 if below ceil, 1 if >= ceil
     binary_red = (red_channel >= ceil_value).astype(np.uint8)
 
+    if DEBUG:
+        image_name = Path(image_path).stem
+        logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_ceil.jpg", binary_red * 255)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
+
     # Detect lines using Probabilistic Hough Transform
     return cv2.HoughLinesP(
         binary_red,
-        rho=6,
+        rho=1,
         theta=np.pi / 180,
-        threshold=50,  # minimum number of intersections to detect a line
-        minLineLength=180,  # minimum line length to accept
-        maxLineGap=15,  # maximum gap between line segments
+        threshold=200,  # minimum number of intersections to detect a line
+        minLineLength=80,  # minimum line length to accept
+        maxLineGap=5,  # maximum gap between line segments
     )
 
 
@@ -145,11 +155,12 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike):
     else:
         raise TypeError("Invalid image, needs path or ndarray")
 
+    overlay = loaded_image.copy()
     # Draw detected lines
     if lines is not None:
         for x1, y1, x2, y2 in lines[:, 0]:
-            cv2.line(loaded_image, (x1, y1), (x2, y2), (0, 0, 255), 10)
-    return loaded_image
+            cv2.line(overlay, (x1, y1), (x2, y2), (0, 0, 255), 10)
+    return cv2.addWeighted(overlay, ALPHA, loaded_image, 1 - ALPHA, 0)
 
 
 def show_result(input: str | np.ndarray):
