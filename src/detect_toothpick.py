@@ -1,5 +1,6 @@
 # type: ignore
 import argparse
+import logging
 from pathlib import Path
 
 import cv2
@@ -43,14 +44,32 @@ def get_arguments():
         help="Shows the images as they are generated",
     )
 
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Debug exports additional intermediate images",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Shows additional log information",
+    )
+
     return parser.parse_args()
 
 
 def main_cli():
     launch_arguments = get_arguments()
+    if launch_arguments.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     global WORK_FOLDER
-    print(launch_arguments.input)
+    logging.info(f"Staring program with input {launch_arguments.input}")
     WORK_FOLDER = launch_arguments.output
 
     if Path(launch_arguments.input).is_dir():
@@ -64,7 +83,7 @@ def main_cli():
 
     if launch_arguments.export_image:
         image_name = Path(launch_arguments.input).name
-        print(f"Exporting image to {WORK_FOLDER}/{image_name}")
+        logging.debug(f"Exporting image to {WORK_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{WORK_FOLDER}/{image_name}", out_image)
 
     if launch_arguments.show_images:
