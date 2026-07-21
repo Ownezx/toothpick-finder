@@ -1,7 +1,9 @@
 # type: ignore
 import cv2
+from cv2.typing import MatLike
 import numpy as np
 import argparse
+from pathlib import Path
 
 
 def get_arguments():
@@ -10,7 +12,7 @@ def get_arguments():
     )
 
     parser.add_argument(
-        "-i", "--input-folder",
+        "-i", "--input",
         required=True,
         help="Path to the input folder or image. It will only take .jpg"
     )
@@ -32,12 +34,14 @@ def get_arguments():
 def main_cli():
     launch_arguments = get_arguments()
 
-    print("lel")
-    test()
+    if Path(launch_arguments.input).is_dir():
+        raise argparse.ArgumentError("Folder are not currently supported.")
+
+    lines = detect_lines(launch_arguments.input)
+    show_result(launch_arguments.input, lines)
 
 
-def test():
-    image_path = "images/IMG_2352.jpg"
+def detect_lines(image_path: str):
 
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -53,7 +57,7 @@ def test():
 
 
     # Detect lines using Probabilistic Hough Transform
-    lines = cv2.HoughLinesP(
+    return cv2.HoughLinesP(
         binary_red,
         rho=6,
         theta=np.pi / 180,
@@ -61,6 +65,9 @@ def test():
         minLineLength=180,   # minimum line length to accept
         maxLineGap=15        # maximum gap between line segments
     )
+
+def show_result(image_path:str, lines:MatLike):
+    loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
     # Draw detected lines
     if lines is not None:

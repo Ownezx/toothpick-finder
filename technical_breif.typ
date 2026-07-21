@@ -124,7 +124,6 @@ Although STag was tested initially, the python wrapper was not reliable and was 
 
 These markers are placed in the ground at each nodes
 
-
 = Technical implementation
 
 == Camera position solving
