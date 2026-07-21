@@ -1,14 +1,14 @@
 # type: ignore
-import cv2
-from cv2.typing import MatLike
-import numpy as np
 import argparse
 from pathlib import Path
 
+import cv2
+import numpy as np
+from cv2.typing import MatLike
 from numpy._typing import NDArray
 
-
 WORK_FOLDER = ""
+
 
 def get_arguments():
     parser = argparse.ArgumentParser(
@@ -16,27 +16,31 @@ def get_arguments():
     )
 
     parser.add_argument(
-        "-i", "--input",
+        "-i",
+        "--input",
         required=True,
-        help="Path to the input folder or image. It will only take .jpg"
+        help="Path to the input folder or image. It will only take .jpg",
     )
 
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default="tf_detect_output",
-        help="Output file (default: %(default)s)"
+        help="Output file (default: %(default)s)",
     )
 
     parser.add_argument(
-        "-e", "--export-image",
+        "-e",
+        "--export-image",
         action="store_true",
-        help="Exports images with the detected toothpick in the ouput (otherwise just saves the segment data)"
+        help="Exports images with the detected toothpick in the ouput (otherwise just saves the segment data)",
     )
 
     parser.add_argument(
-        "-s", "--show-images",
+        "-s",
+        "--show-images",
         action="store_true",
-        help="Shows the images as they are generated"
+        help="Shows the images as they are generated",
     )
 
     return parser.parse_args()
@@ -61,13 +65,10 @@ def main_cli():
     if launch_arguments.export_image:
         image_name = Path(launch_arguments.input).name
         print(f"Exporting image to {WORK_FOLDER}/{image_name}")
-        assert(cv2.imwrite(f"{WORK_FOLDER}/{image_name}",out_image))
+        assert cv2.imwrite(f"{WORK_FOLDER}/{image_name}", out_image)
 
     if launch_arguments.show_images:
         show_result(out_image)
-
-
-
 
 
 def detect_lines(image_path: str):
@@ -84,19 +85,19 @@ def detect_lines(image_path: str):
     # Create a binary image: 0 if below ceil, 1 if >= ceil
     binary_red = (red_channel >= ceil_value).astype(np.uint8)
 
-
     # Detect lines using Probabilistic Hough Transform
     return cv2.HoughLinesP(
         binary_red,
         rho=6,
         theta=np.pi / 180,
-        threshold=50,       # minimum number of intersections to detect a line
-        minLineLength=180,   # minimum line length to accept
-        maxLineGap=15        # maximum gap between line segments
+        threshold=50,  # minimum number of intersections to detect a line
+        minLineLength=180,  # minimum line length to accept
+        maxLineGap=15,  # maximum gap between line segments
     )
 
-def generate_result_image(input:str|np.ndarray, lines:MatLike):
-    if type(input) is str :
+
+def generate_result_image(input: str | np.ndarray, lines: MatLike):
+    if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
     elif type(input) is NDArray:
         loaded_image = input
@@ -109,8 +110,9 @@ def generate_result_image(input:str|np.ndarray, lines:MatLike):
             cv2.line(loaded_image, (x1, y1), (x2, y2), (0, 0, 255), 10)
     return loaded_image
 
-def show_result(input:str|np.ndarray):
-    if type(input) is str :
+
+def show_result(input: str | np.ndarray):
+    if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
     elif type(input) is np.ndarray:
         loaded_image = input
