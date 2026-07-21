@@ -16,10 +16,20 @@ DEBUG = False
 ALPHA = 0.5
 """Transparency when overlaying the lines over the images"""
 
+DETECT_CONFIG = {
+    "line_width": 7,
+    "ceil_thresold": 240,
+    "rho": 6,
+    "theta": np.pi / 180,
+    "threshold": 200,
+    "minLineLength": 100,
+    "maxLineGap": 10,
+}
+
 
 def get_arguments():
     parser = argparse.ArgumentParser(
-        description="This command line tool allows to detect toothpics in pictures."
+        description="This command line tool allows to detect lines in pictures. It is recommended to use a dataset folder with all the images within the same folder as a file to finetune will be created inside of it."
     )
 
     parser.add_argument(
@@ -124,26 +134,31 @@ def detect_lines(image_path: str):
     # Extract the red channel (OpenCV uses BGR order)
     red_channel = loaded_image[:, :, 2]
 
-    # Define a threshold (ceil) value
-    ceil_value = 240  # you can change this
-
     # Create a binary image: 0 if below ceil, 1 if >= ceil
-    binary_red = (red_channel >= ceil_value).astype(np.uint8)
+    binary_red = (red_channel >= DETECT_CONFIG["ceil_thresold"]).astype(np.uint8)
+
+    kernel = cv2.getStructuringElement(
+        cv2.MORPH_RECT, (DETECT_CONFIG["line_width"], DETECT_CONFIG["line_width"])
+    )
+    binary_red_erroded = cv2.morphologyEx(binary_red, cv2.MORPH_OPEN, kernel)
 
     if DEBUG:
         image_name = Path(image_path).stem
         logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_ceil.jpg", binary_red * 255)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_ceil.png", binary_red * 255)
+        assert cv2.imwrite(
+            f"{OUTPUT_FOLDER}/{image_name}_ceil_erroded.png", binary_red_erroded * 255
+        )
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
 
     # Detect lines using Probabilistic Hough Transform
     return cv2.HoughLinesP(
-        binary_red,
-        rho=1,
-        theta=np.pi / 180,
-        threshold=200,  # minimum number of intersections to detect a line
-        minLineLength=80,  # minimum line length to accept
-        maxLineGap=5,  # maximum gap between line segments
+        binary_red_erroded,
+        rho=DETECT_CONFIG["rho"],
+        theta=DETECT_CONFIG["theta"],
+        threshold=DETECT_CONFIG["threshold"],
+        minLineLength=DETECT_CONFIG["minLineLength"],
+        maxLineGap=DETECT_CONFIG["maxLineGap"],
     )
 
 
