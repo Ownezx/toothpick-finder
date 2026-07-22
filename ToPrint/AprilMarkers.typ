@@ -16,6 +16,6 @@
 
 #grid(
   columns: 4,
-  gutter: 8pt,
+  gutter: 0.5cm,
   ..images.map(it => image(it, width: 100%))
 )
