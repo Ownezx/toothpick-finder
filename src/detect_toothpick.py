@@ -13,7 +13,7 @@ OUTPUT_FOLDER = ""
 """Output folder"""
 DEBUG = False
 """When active, exports extra images for debugging purposes"""
-ALPHA = 0.5
+ALPHA = 0.7
 """Transparency when overlaying the lines over the images"""
 
 DETECT_CONFIG = {
@@ -192,7 +192,7 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike):
     # Draw detected lines
     if lines is not None:
         for x1, y1, x2, y2 in lines[:, 0]:
-            cv2.line(overlay, (x1, y1), (x2, y2), (0, 0, 255), 10)
+            cv2.line(overlay, (x1, y1), (x2, y2), (255, 0, 0), 10)
     return cv2.addWeighted(overlay, ALPHA, loaded_image, 1 - ALPHA, 0)
 
 
