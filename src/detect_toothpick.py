@@ -13,8 +13,6 @@ OUTPUT_FOLDER = ""
 """Output folder"""
 DEBUG = False
 """When active, exports extra images for debugging purposes"""
-ALPHA = 0.7
-"""Transparency when overlaying the lines over the images"""
 
 DETECT_CONFIG = {
     "line_width": 7,
@@ -24,6 +22,8 @@ DETECT_CONFIG = {
     "threshold": 200,
     "minLineLength": 100,
     "maxLineGap": 10,
+    "overlay_color": (255, 0, 0),
+    "overlay_alpha": 0.7,
 }
 """Default configuration file for toothpick detector"""
 
@@ -192,8 +192,14 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike):
     # Draw detected lines
     if lines is not None:
         for x1, y1, x2, y2 in lines[:, 0]:
-            cv2.line(overlay, (x1, y1), (x2, y2), (255, 0, 0), 10)
-    return cv2.addWeighted(overlay, ALPHA, loaded_image, 1 - ALPHA, 0)
+            cv2.line(overlay, (x1, y1), (x2, y2), DETECT_CONFIG["overlay_color"], 10)
+    return cv2.addWeighted(
+        overlay,
+        DETECT_CONFIG["overlay_alpha"],
+        loaded_image,
+        1 - DETECT_CONFIG["overlay_alpha"],
+        0,
+    )
 
 
 def show_result(input: str | np.ndarray):
