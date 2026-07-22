@@ -24,10 +24,10 @@ DETECT_CONFIG = {
     "maxLineGap": 10,
     "overlay_color": (255, 0, 0),
     "overlay_alpha": 0.7,
-    "low_HSV_grass_removal": [35, 40, 40],
-    "high_HSV_grass_removal": [90, 255, 255],
-    "low_HSV_toothpick": [5, 20, 60],
-    "high_HSV_toothpick": [35, 255, 255],
+    "low_HSV_blacklist": [35, 40, 40],
+    "high_HSV_blacklist": [90, 255, 255],
+    "low_HSV_whitelist": [5, 20, 60],
+    "high_HSV_whitelist": [35, 255, 255],
 }
 """Default configuration file for toothpick detector"""
 
@@ -153,26 +153,26 @@ def detect_lines(image_path: str):
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
-    # Remove the green grass that is definitely not a toothpick
+    # Remove selected hues
     hsv = cv2.cvtColor(loaded_image, cv2.COLOR_BGR2HSV)
 
-    grass_mask = cv2.inRange(
+    blacklist_mask = cv2.inRange(
         hsv,
-        np.array(DETECT_CONFIG["low_HSV_grass_removal"]),
-        np.array(DETECT_CONFIG["high_HSV_grass_removal"]),
+        np.array(DETECT_CONFIG["low_HSV_blacklist"]),
+        np.array(DETECT_CONFIG["high_HSV_blacklist"]),
     )
-    grass_mask = cv2.bitwise_not(grass_mask)
-    grass_removed_image = cv2.bitwise_and(loaded_image, loaded_image, mask=grass_mask)
+    blacklist_mask = cv2.bitwise_not(blacklist_mask)
+    blacklist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=blacklist_mask)
 
-    # toothpick hue selector
-    toothpick_mask = cv2.inRange(
+    # Conserve only selected hues
+    whitelist_mask = cv2.inRange(
         hsv,
-        np.array(DETECT_CONFIG["low_HSV_toothpick"]),
-        np.array(DETECT_CONFIG["high_HSV_toothpick"]),
+        np.array(DETECT_CONFIG["low_HSV_whitelist"]),
+        np.array(DETECT_CONFIG["high_HSV_whitelist"]),
     )
-    toothpick_image = cv2.bitwise_and(loaded_image, loaded_image, mask=toothpick_mask)
+    whitelist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=whitelist_mask)
 
-    masked_image = cv2.bitwise_and(toothpick_image, grass_removed_image)
+    masked_image = cv2.bitwise_and(whitelist_image, blacklist_image)
 
     # Extract the red channel (OpenCV uses BGR order)
     red_channel = masked_image[:, :, 2]
@@ -189,17 +189,11 @@ def detect_lines(image_path: str):
         image_name = Path(image_path).stem
         logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_ceil.png", binary_red * 255)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
         assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_no_grass.png", grass_removed_image
-        )
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_toothpick.png", toothpick_image
-        )
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_double_mask.png", masked_image
-        )
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_ceil_erroded.png", binary_red_erroded * 255
+            f"{OUTPUT_FOLDER}/{image_name}_ceil_errode.png", binary_red_erroded * 255
         )
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
 
