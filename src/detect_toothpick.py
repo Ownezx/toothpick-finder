@@ -24,6 +24,8 @@ DETECT_CONFIG = {
     "maxLineGap": 10,
     "overlay_color": (255, 0, 0),
     "overlay_alpha": 0.7,
+    "low_HSV_grass_removal": [35, 40, 40],
+    "high_HSV_grass_removal": [90, 255, 255],
 }
 """Default configuration file for toothpick detector"""
 
@@ -149,8 +151,19 @@ def detect_lines(image_path: str):
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
+    # Remove the green grass that is definitely not a toothpick
+    hsv = cv2.cvtColor(loaded_image, cv2.COLOR_BGR2HSV)
+
+    grass_mask = cv2.inRange(
+        hsv,
+        np.array(DETECT_CONFIG["low_HSV_grass_removal"]),
+        np.array(DETECT_CONFIG["high_HSV_grass_removal"]),
+    )
+    grass_mask = cv2.bitwise_not(grass_mask)
+    grass_removed_image = cv2.bitwise_and(loaded_image, loaded_image, mask=grass_mask)
+
     # Extract the red channel (OpenCV uses BGR order)
-    red_channel = loaded_image[:, :, 2]
+    red_channel = grass_removed_image[:, :, 2]
 
     # Create a binary image: 0 if below ceil, 1 if >= ceil
     binary_red = (red_channel >= DETECT_CONFIG["ceil_thresold"]).astype(np.uint8)
@@ -164,6 +177,9 @@ def detect_lines(image_path: str):
         image_name = Path(image_path).stem
         logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_ceil.png", binary_red * 255)
+        assert cv2.imwrite(
+            f"{OUTPUT_FOLDER}/{image_name}_no_grass.png", grass_removed_image
+        )
         assert cv2.imwrite(
             f"{OUTPUT_FOLDER}/{image_name}_ceil_erroded.png", binary_red_erroded * 255
         )
