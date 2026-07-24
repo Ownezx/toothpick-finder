@@ -118,6 +118,7 @@ def main_cli():
             )
 
     if not input_is_dir:
+        load_calibration(launch_arguments.input, True)
         handle_image(
             launch_arguments.input,
             launch_arguments.export_image,
