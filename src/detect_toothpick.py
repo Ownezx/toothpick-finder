@@ -1,5 +1,6 @@
 # type: ignore
 import argparse
+import json
 import logging
 import shutil
 from pathlib import Path
@@ -16,7 +17,6 @@ DEBUG = False
 
 DETECT_CONFIG = {
     "line_width": 7,
-    "ceil_thresold": 240,
     "rho": 6,
     "theta": np.pi / 180,
     "threshold": 200,
@@ -125,6 +125,7 @@ def main_cli():
         )
         return
 
+    load_calibration(launch_arguments.input, True)
     for image in list(Path(launch_arguments.input).glob("*.jpg")):
         logging.info(f"Handling image {image}.")
         handle_image(
@@ -237,3 +238,27 @@ def show_result(input: str | np.ndarray):
     cv2.imshow("Detected Toothpicks", loaded_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+
+def load_calibration(workspace_path: str, write_default_if_empty: bool) -> dict:
+
+    try:
+        # Open and load the JSON file
+        with open(f"{workspace_path}/calibration.json", "r", encoding="utf-8") as file:
+            read_config = json.load(file)
+            global DETECT_CONFIG
+            is_valid = read_config.keys() == DETECT_CONFIG.keys()
+            if is_valid:
+                DETECT_CONFIG = read_config
+            else:
+                raise ValueError(
+                    "Invalid configuration file, please review or delete configuration file."
+                )
+    except FileNotFoundError as e:
+        if not write_default_if_empty:
+            raise FileNotFoundError("Calibration Json not found in dataset.")
+        with open(f"{workspace_path}/calibration.json", "w", encoding="utf-8") as file:
+            json.dump(DETECT_CONFIG, file, indent=4)
+            logging.info(
+                f"Writing new calibration file in dataset folder {workspace_path}."
+            )
