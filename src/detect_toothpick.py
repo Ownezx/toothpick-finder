@@ -22,12 +22,12 @@ DETECT_CONFIG = {
     "threshold": 200,
     "minLineLength": 100,
     "maxLineGap": 10,
-    "overlay_color": (255, 0, 0),
-    "overlay_alpha": 0.7,
+    "overlay_color": (255, 0, 255),
+    "overlay_alpha": 1,
     "low_HSV_blacklist": [35, 40, 40],
     "high_HSV_blacklist": [90, 255, 255],
-    "low_HSV_whitelist": [5, 20, 60],
-    "high_HSV_whitelist": [35, 255, 255],
+    "low_HSV_whitelist": [100, 140, 60],
+    "high_HSV_whitelist": [150, 255, 255],
 }
 """Default configuration file for toothpick detector"""
 
@@ -174,32 +174,28 @@ def detect_lines(image_path: str):
 
     masked_image = cv2.bitwise_and(whitelist_image, blacklist_image)
 
-    # Extract the red channel (OpenCV uses BGR order)
-    red_channel = masked_image[:, :, 2]
-
     # Create a binary image: 0 if below ceil, 1 if >= ceil
-    binary_red = (red_channel >= DETECT_CONFIG["ceil_thresold"]).astype(np.uint8)
+    binary_image = np.any(masked_image != 0, axis=2).astype(np.uint8)
 
     kernel = cv2.getStructuringElement(
         cv2.MORPH_RECT, (DETECT_CONFIG["line_width"], DETECT_CONFIG["line_width"])
     )
-    binary_red_erroded = cv2.morphologyEx(binary_red, cv2.MORPH_OPEN, kernel)
+    binary_image_erroded = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
 
     if DEBUG:
         image_name = Path(image_path).stem
         logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_ceil.png", binary_red * 255)
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
         assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_ceil_errode.png", binary_red_erroded * 255
+            f"{OUTPUT_FOLDER}/{image_name}_ceil_errode.png", binary_image_erroded * 255
         )
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
 
     # Detect lines using Probabilistic Hough Transform
     return cv2.HoughLinesP(
-        binary_red_erroded,
+        binary_image_erroded,
         rho=DETECT_CONFIG["rho"],
         theta=DETECT_CONFIG["theta"],
         threshold=DETECT_CONFIG["threshold"],
