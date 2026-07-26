@@ -1,16 +1,15 @@
 # type: ignore
-#%%
-import pycolmap
-from pycolmap import Camera
-from pycolmap import Image
-from pycolmap import CameraModelId
-from pathlib import Path
-from typing import Dict, Tuple
+# %%
 from collections import defaultdict
 from itertools import combinations
-import numpy as np
+from pathlib import Path
+from typing import Dict, Tuple
+
 import apriltag
 import cv2
+import numpy as np
+import pycolmap
+from pycolmap import Camera, CameraModelId, Image
 
 # Define paths
 project_dir = Path("colmap_project")
@@ -32,21 +31,21 @@ db.clear_descriptors()
 db.clear_two_view_geometries()
 
 # Setup april tag detector
-detector = apriltag.apriltag('tagStandard41h12', threads=4)
+detector = apriltag.apriltag("tagStandard41h12", threads=4)
 
 sift = cv2.SIFT.create(
-    nfeatures=0,          # max number of keypoints to retain (0 = unlimited)
-    nOctaveLayers=3,      # number of layers per octave
+    nfeatures=0,  # max number of keypoints to retain (0 = unlimited)
+    nOctaveLayers=3,  # number of layers per octave
     contrastThreshold=0.04,
     edgeThreshold=10,
     sigma=1.6,
     # enable_precise_upscale is optional (OpenCV 4.5+)
 )
 
-#%%
+# %%
 
 # These are the values from my Iphone16e
-camera:Camera = Camera.create(1,CameraModelId.PINHOLE,4.2,5712,4284)
+camera: Camera = Camera.create(1, CameraModelId.PINHOLE, 4.2, 5712, 4284)
 camera_id = db.write_camera(camera)
 
 
@@ -64,20 +63,22 @@ point_dictionary: Dict[int, Dict[int, Tuple[int, int, int, int]]] = defaultdict(
 image_keypoints: Dict[int, np.ndarray] = defaultdict(dict)
 
 for index, image_path in enumerate(image_files):
-    image:Image = Image(image_path.name,camera_id=camera_id)
+    image: Image = Image(image_path.name, camera_id=camera_id)
     image_id = db.write_image(image)
     loaded_image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
-    detections = detector.detect(loaded_image) # type: ignore
+    detections = detector.detect(loaded_image)  # type: ignore
 
     # Collect all corners into one array for this image
     all_keypoints = []
-    
+
     for index, detection in enumerate(detections):
-        corners = np.squeeze(detection['lb-rb-rt-lt'])
+        corners = np.squeeze(detection["lb-rb-rt-lt"])
         scale = np.ones((corners.shape[0], 1), dtype=np.float32)
         orientation = np.zeros((corners.shape[0], 1), dtype=np.float32)
         keypoints = np.hstack((corners.astype(np.float32), scale, orientation))
-        point_dictionary[detection["id"]][image_id] = [4 * index + i for i in range(0,4)]
+        point_dictionary[detection["id"]][image_id] = [
+            4 * index + i for i in range(0, 4)
+        ]
         all_keypoints.append(keypoints)
 
     if all_keypoints:
@@ -85,8 +86,10 @@ for index, image_path in enumerate(image_files):
         num_keypoints = keypoints_arr.shape[0]
 
         # Convert COLMAP keypoints to OpenCV KeyPoint objects (correct positional args)
-        cv_keypoints = [cv2.KeyPoint(float(k[0]), float(k[1]), float(k[2]), float(k[3])) 
-                        for k in keypoints_arr]
+        cv_keypoints = [
+            cv2.KeyPoint(float(k[0]), float(k[1]), float(k[2]), float(k[3]))
+            for k in keypoints_arr
+        ]
 
         # Compute descriptors at these keypoints
         _, descriptors = sift.compute(loaded_image, cv_keypoints)
@@ -98,16 +101,20 @@ for index, image_path in enumerate(image_files):
         # Write keypoints and real descriptors to database
         db.write_keypoints(image_id, keypoints_arr)
         db.write_descriptors(image_id, descriptors.astype(np.float32))
-        print(f"Wrote {len(keypoints_arr)} keypoints for {image_path.name}, id: {image_id}")
+        print(
+            f"Wrote {len(keypoints_arr)} keypoints for {image_path.name}, id: {image_id}"
+        )
 
         image_keypoints[image_id] = keypoints_arr[:, :2].astype(np.float64)
 
-        if False: 
+        if False:
             print(keypoints_arr)
             debug_image = cv2.cvtColor(loaded_image, cv2.COLOR_GRAY2BGR)
             for kp in keypoints_arr:
                 x, y = int(kp[0]), int(kp[1])
-                cv2.circle(debug_image, (x, y), radius=10, color=(0, 0, 255), thickness=-1)
+                cv2.circle(
+                    debug_image, (x, y), radius=10, color=(0, 0, 255), thickness=-1
+                )
             cv2.imshow(f"Keypoints - {image_path.name}", debug_image)
             cv2.waitKey(0)  # Press any key to continue
             cv2.destroyAllWindows()
@@ -121,13 +128,11 @@ for tag_id, image_map in point_dictionary.items():
 
     # Match tag across all image pairs that see it
     for img1, img2 in combinations(image_ids, 2):
-
         kp_indices1 = image_map[img1]
         kp_indices2 = image_map[img2]
 
         # Match corresponding corners
         for kp1, kp2 in zip(kp_indices1, kp_indices2):
-
             # Ensure deterministic ordering
             if img1 < img2:
                 pair_matches[(img1, img2)].append([kp1, kp2])
@@ -135,7 +140,6 @@ for tag_id, image_map in point_dictionary.items():
                 pair_matches[(img2, img1)].append([kp2, kp1])
 
 for (img1, img2), matches_list in pair_matches.items():
-
     matches_arr = np.array(matches_list, dtype=np.uint32)
 
     if len(matches_arr) > 0:
@@ -145,18 +149,11 @@ for (img1, img2), matches_list in pair_matches.items():
         pts2 = image_keypoints[img2]
         # Estimate verified two view geometry
         tvg = pycolmap.estimate_two_view_geometry(
-            camera,
-            pts1,
-            camera,
-            pts2,
-            matches_arr
+            camera, pts1, camera, pts2, matches_arr
         )
-        db.write_two_view_geometry(img1,img2,tvg)
+        db.write_two_view_geometry(img1, img2, tvg)
 
-        print(
-            f"Wrote {len(matches_arr)} matches between "
-            f"{img1} and {img2}"
-        )
+        print(f"Wrote {len(matches_arr)} matches between {img1} and {img2}")
 
 db.close()
 
