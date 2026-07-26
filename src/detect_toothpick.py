@@ -2,13 +2,14 @@
 import argparse
 import json
 import logging
-import shutil
 from pathlib import Path
 
 import cv2
 import numpy as np
 from cv2.typing import MatLike
 from numpy._typing import NDArray
+
+from utils import add_common_arguments, validate_arguments
 
 logger = logging.getLogger(__name__)
 
@@ -35,71 +36,23 @@ DETECT_CONFIG = {
 """Default configuration file for toothpick detector"""
 
 
-def get_arguments():
+def toothpick_cli():
     parser = argparse.ArgumentParser(
         description="This command line tool allows to detect lines in pictures. It is recommended to use a dataset folder with all the images within the same folder as a file to finetune will be created inside of it."
     )
-
-    parser.add_argument(
-        "-i",
-        "--input",
-        required=True,
-        help="Path to the input folder or image. It will only take .jpg",
+    add_common_arguments(
+        parser,
+        default_output="tfd_toothpick_output",
+        object_name="toothpick",
     )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        default="tf_detect_output",
-        help="Output file (default: %(default)s)",
-    )
-
-    parser.add_argument(
-        "-e",
-        "--export-image",
-        action="store_true",
-        help="Exports images with the detected toothpick in the ouput (otherwise just saves the segment data)",
-    )
-
-    parser.add_argument(
-        "-s",
-        "--show-images",
-        action="store_true",
-        help="Shows the images as they are generated",
-    )
-
     parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
-        help="Debug exports additional intermediate images",
+        help="Export additional intermediate images.",
     )
-
-    parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="If the output folder already exists, deletes it without warning before starting.",
-    )
-
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Shows additional log information",
-    )
-
-    return parser.parse_args()
-
-
-def toothpick_cli():
-    launch_arguments = get_arguments()
-    if launch_arguments.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    logger.info(f"Staring program with input {launch_arguments.input}")
+    launch_arguments = parser.parse_args()
+    validate_arguments(launch_arguments)
 
     global OUTPUT_FOLDER
     OUTPUT_FOLDER = launch_arguments.output
@@ -107,19 +60,9 @@ def toothpick_cli():
     global DEBUG
     DEBUG = launch_arguments.debug
 
+    logger.info(f"Staring program with input {launch_arguments.input}")
+
     input_is_dir = Path(launch_arguments.input).is_dir()
-
-    if launch_arguments.force:
-        shutil.rmtree(OUTPUT_FOLDER)
-        Path(OUTPUT_FOLDER).mkdir()
-    else:
-        try:
-            Path(OUTPUT_FOLDER).mkdir()
-        except FileExistsError:
-            raise FileExistsError(
-                "Output folder already exists, if you want to delete folder on launch use -f"
-            )
-
     if not input_is_dir:
         load_calibration(launch_arguments.input, True)
         handle_image(
@@ -244,7 +187,7 @@ def show_result(input: str | np.ndarray):
     cv2.destroyAllWindows()
 
 
-def load_calibration(workspace_path: str, write_default_if_empty: bool) -> dict:
+def load_calibration(workspace_path: str, write_default_if_empty: bool):
 
     try:
         # Open and load the JSON file
@@ -258,7 +201,7 @@ def load_calibration(workspace_path: str, write_default_if_empty: bool) -> dict:
                 raise ValueError(
                     "Invalid configuration file, please review or delete configuration file."
                 )
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         if not write_default_if_empty:
             raise FileNotFoundError("Calibration Json not found in dataset.")
         with open(f"{workspace_path}/calibration.json", "w", encoding="utf-8") as file:
