@@ -10,6 +10,9 @@ import numpy as np
 from cv2.typing import MatLike
 from numpy._typing import NDArray
 
+logger = logging.getLogger(__name__)
+
+
 OUTPUT_FOLDER = ""
 """Output folder"""
 DEBUG = False
@@ -89,14 +92,14 @@ def get_arguments():
     return parser.parse_args()
 
 
-def main_cli():
+def toothpick_cli():
     launch_arguments = get_arguments()
     if launch_arguments.verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    logging.info(f"Staring program with input {launch_arguments.input}")
+    logger.info(f"Staring program with input {launch_arguments.input}")
 
     global OUTPUT_FOLDER
     OUTPUT_FOLDER = launch_arguments.output
@@ -128,7 +131,7 @@ def main_cli():
 
     load_calibration(launch_arguments.input, True)
     for image in list(Path(launch_arguments.input).glob("*.jpg")):
-        logging.info(f"Handling image {image}.")
+        logger.info(f"Handling image {image}.")
         handle_image(
             str(image),
             launch_arguments.export_image,
@@ -143,7 +146,7 @@ def handle_image(image_path: str, export: bool, show: bool):
 
     if export:
         image_name = Path(image_path).name
-        logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
+        logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
 
     if show:
@@ -186,7 +189,7 @@ def detect_lines(image_path: str):
 
     if DEBUG:
         image_name = Path(image_path).stem
-        logging.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
+        logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
@@ -260,6 +263,6 @@ def load_calibration(workspace_path: str, write_default_if_empty: bool) -> dict:
             raise FileNotFoundError("Calibration Json not found in dataset.")
         with open(f"{workspace_path}/calibration.json", "w", encoding="utf-8") as file:
             json.dump(DETECT_CONFIG, file, indent=4)
-            logging.info(
+            logger.info(
                 f"Writing new calibration file in dataset folder {workspace_path}."
             )
