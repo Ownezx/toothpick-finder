@@ -5,6 +5,7 @@ images
 *.db
 *.db-shm
 *.db-wal
+*.bin
 
 #images
 *.pdf
