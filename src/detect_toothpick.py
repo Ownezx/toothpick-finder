@@ -7,7 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from cv2.typing import MatLike
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 
 from utils import add_common_arguments, validate_arguments
 
