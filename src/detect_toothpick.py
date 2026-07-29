@@ -1,6 +1,5 @@
 # type: ignore
 import argparse
-import json
 import logging
 from pathlib import Path
 
@@ -9,6 +8,7 @@ import numpy as np
 from cv2.typing import MatLike
 from numpy.typing import NDArray
 
+from config import load_calibration
 from utils import add_common_arguments, validate_arguments
 
 logger = logging.getLogger(__name__)
@@ -18,22 +18,6 @@ OUTPUT_FOLDER = ""
 """Output folder"""
 DEBUG = False
 """When active, exports extra images for debugging purposes"""
-
-DETECT_CONFIG = {
-    "line_width": 7,
-    "rho": 6,
-    "theta": np.pi / 180,
-    "threshold": 200,
-    "minLineLength": 100,
-    "maxLineGap": 10,
-    "overlay_color": (255, 0, 255),
-    "overlay_alpha": 1,
-    "low_HSV_blacklist": [35, 40, 40],
-    "high_HSV_blacklist": [90, 255, 255],
-    "low_HSV_whitelist": [100, 140, 60],
-    "high_HSV_whitelist": [150, 255, 255],
-}
-"""Default configuration file for toothpick detector"""
 
 
 def toothpick_cli():
@@ -64,28 +48,34 @@ def toothpick_cli():
 
     input_is_dir = Path(launch_arguments.input).is_dir()
     if not input_is_dir:
-        load_calibration(launch_arguments.input, True)
+        config = load_calibration(Path(launch_arguments.input).parent, True)
         handle_image(
             launch_arguments.input,
             launch_arguments.export_image,
             launch_arguments.show_images,
+            config,
         )
         return
 
-    load_calibration(launch_arguments.input, True)
+    config = load_calibration(launch_arguments.input, True)
     for image in list(Path(launch_arguments.input).glob("*.jpg")):
         logger.info(f"Handling image {image}.")
         handle_image(
             str(image),
             launch_arguments.export_image,
             launch_arguments.show_images,
+            config,
         )
 
 
-def handle_image(image_path: str, export: bool, show: bool):
-    lines = detect_lines(image_path)
+def handle_image(image_path: str, export: bool, show: bool, config):
+    lines = detect_lines(image_path, config)
 
-    out_image = generate_result_image(image_path, lines)
+    out_image = generate_result_image(
+        image_path,
+        lines,
+        config,
+    )
 
     if export:
         image_name = Path(image_path).name
@@ -96,7 +86,7 @@ def handle_image(image_path: str, export: bool, show: bool):
         show_result(out_image)
 
 
-def detect_lines(image_path: str):
+def detect_lines(image_path: str, config):
 
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -106,8 +96,8 @@ def detect_lines(image_path: str):
 
     blacklist_mask = cv2.inRange(
         hsv,
-        np.array(DETECT_CONFIG["low_HSV_blacklist"]),
-        np.array(DETECT_CONFIG["high_HSV_blacklist"]),
+        np.array(config["low_HSV_blacklist"]),
+        np.array(config["high_HSV_blacklist"]),
     )
     blacklist_mask = cv2.bitwise_not(blacklist_mask)
     blacklist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=blacklist_mask)
@@ -115,8 +105,8 @@ def detect_lines(image_path: str):
     # Conserve only selected hues
     whitelist_mask = cv2.inRange(
         hsv,
-        np.array(DETECT_CONFIG["low_HSV_whitelist"]),
-        np.array(DETECT_CONFIG["high_HSV_whitelist"]),
+        np.array(config["low_HSV_whitelist"]),
+        np.array(config["high_HSV_whitelist"]),
     )
     whitelist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=whitelist_mask)
 
@@ -126,7 +116,7 @@ def detect_lines(image_path: str):
     binary_image = np.any(masked_image != 0, axis=2).astype(np.uint8)
 
     kernel = cv2.getStructuringElement(
-        cv2.MORPH_RECT, (DETECT_CONFIG["line_width"], DETECT_CONFIG["line_width"])
+        cv2.MORPH_RECT, (config["line_width"], config["line_width"])
     )
     binary_image_erroded = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
 
@@ -144,15 +134,15 @@ def detect_lines(image_path: str):
     # Detect lines using Probabilistic Hough Transform
     return cv2.HoughLinesP(
         binary_image_erroded,
-        rho=DETECT_CONFIG["rho"],
-        theta=DETECT_CONFIG["theta"],
-        threshold=DETECT_CONFIG["threshold"],
-        minLineLength=DETECT_CONFIG["minLineLength"],
-        maxLineGap=DETECT_CONFIG["maxLineGap"],
+        rho=config["rho"],
+        theta=config["theta"],
+        threshold=config["threshold"],
+        minLineLength=config["minLineLength"],
+        maxLineGap=config["maxLineGap"],
     )
 
 
-def generate_result_image(input: str | np.ndarray, lines: MatLike):
+def generate_result_image(input: str | np.ndarray, lines: MatLike, config):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
     elif type(input) is NDArray:
@@ -164,12 +154,12 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike):
     # Draw detected lines
     if lines is not None:
         for x1, y1, x2, y2 in lines[:, 0]:
-            cv2.line(overlay, (x1, y1), (x2, y2), DETECT_CONFIG["overlay_color"], 10)
+            cv2.line(overlay, (x1, y1), (x2, y2), config["overlay_color"], 10)
     return cv2.addWeighted(
         overlay,
-        DETECT_CONFIG["overlay_alpha"],
+        config["overlay_alpha"],
         loaded_image,
-        1 - DETECT_CONFIG["overlay_alpha"],
+        1 - config["overlay_alpha"],
         0,
     )
 
@@ -185,27 +175,3 @@ def show_result(input: str | np.ndarray):
     cv2.imshow("Detected Toothpicks", loaded_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
-
-def load_calibration(workspace_path: str, write_default_if_empty: bool):
-
-    try:
-        # Open and load the JSON file
-        with open(f"{workspace_path}/calibration.json", "r", encoding="utf-8") as file:
-            read_config = json.load(file)
-            global DETECT_CONFIG
-            is_valid = read_config.keys() == DETECT_CONFIG.keys()
-            if is_valid:
-                DETECT_CONFIG = read_config
-            else:
-                raise ValueError(
-                    "Invalid configuration file, please review or delete configuration file."
-                )
-    except FileNotFoundError:
-        if not write_default_if_empty:
-            raise FileNotFoundError("Calibration Json not found in dataset.")
-        with open(f"{workspace_path}/calibration.json", "w", encoding="utf-8") as file:
-            json.dump(DETECT_CONFIG, file, indent=4)
-            logger.info(
-                f"Writing new calibration file in dataset folder {workspace_path}."
-            )
