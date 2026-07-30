@@ -33,3 +33,4 @@ Repository = "https://github.com/Ownezx/toothpick-finder"
 [project.scripts]
 tf-detect-toothpick = "detect_toothpick:toothpick_cli"
 tf-detect-apriltag = "detect_apriltag:apriltag_cli"
+tf-colmap = "colmap:colmap_cli"
