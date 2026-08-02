@@ -55,7 +55,7 @@
 
 == Context
 
-When the process behind mapping nodes (i.e., points in which the plant has rooted in the soil) can be very time consuming, repetitive and labor intensive for the following reasons:
+The process behind mapping points on a 2D surface can be very time consuming, repetitive and labor intensive, for example rooted nodes of a crawling plant in soil. This is due to the following reasons:
 
 + Indicators of nodes must be placed in the ground
 + These indicators are then mapped on a 2d transparent surface while separating each plant
@@ -67,15 +67,10 @@ Such methodology can lead to errors in the data-gathering process and difficulti
 
 This software, although in its infancy, aims to replace steps 2 and 3 to facilitate the process and make it more reliable.
 
-+ Indicators of nodes must be placed in the ground
-+ 2D reference images (fiducial markers) should be placed
-+ Photos should be gathered in a circular pattern and at two different heights while moving around the targeted plot of land
-+ The software would resolve photo location and estimate marker placement.
-+ A manual verification step by the operator would be necessary to verify
-  - Adequate identification of node markers
-  - Adequate identification of fiducial markers
-  - Correct plant individal identification
-+ A 3D map of the plot would then be automatically generated
++ Sticks with a high contrast to the background must be placed in nodes of interest
++ April tags should be place on the floor to represent the plane of interest
++ Overlapping photos must be taken
++ The software would resolve photo location and estimate marker placement and a 3D map of plane, node and camera position should be rendered.
 
 = User Manual
 
@@ -86,67 +81,44 @@ This section covers the steps to create a dataset for use in the software.
 Before going on the field several
 
 - A phone with a decent camera, the software was tested with an Iphone 16e
-- Wooden squewer sticks of approximately 20_cm long
-- Several different colored paint plus white paint
-- White styrophoam balls of about 2.5_cm in diameter
-- A printer
+- Wooden skewer sticks of approximately 15~cm long
+- Paint that allows to have a high hue contrast in the studied area
+- Printed non reflective the april markers in the ToPrint folder on a rigid flat surface
+- Printed calibration sheet in the ToPrint folder on a rigid flat surface
 
-Print the calibration sheet and the markers from the ToPrint section of the toothpick repo. These are the tags and calibration checker pattern used with the program.
+== Measurement condition
 
-== Placing markers
+Before taking any measurements the following must be verified:
+- The painted stick have a high hue contrast compared to the surrounding area, example, light blue or purple in a patch of grass with dirt
+- Different light intensities may change the color of the stick leading to worse contrast, example a dark blue stick may work well in intense light conditions but may be too dark for indoor conditions
+- The testing area must be in diffuse lighting conditions, ideal outdoor conditions would be uniform cloud layers during the day
 
-== Photo taking method
+You should be avoiding
+  - Direct sunlight conditions
+  - Rapidly changing lighting such as sunset or passing cloud
+  - Reflecting surfaces
+
+
+== Measurement
+
+- Place AprilTags on the floor plane
+- Place the sticks in the ground
+- Set your camera to manual to avoid
+  - On iphone, long press on the camera until the AE/AF lock indication apears at the top
+- Take pictures in a circular manner around the target area at several levels with a lot of picture overlap\
+  The begining of this video is a good example of how to take the pictures: https://www.youtube.com/watch?v=6VjA9EfkFSc
 
 == Data processing using toothpick-finder
 
-== Data analysis using python
-
-= Fiducial markers
-
-Fiducial markers are reference material on an image to have a reference object with known size and position on an image. In the context of this software, two different kinds of markers will be used, 2D markers for localization and surface topology, and 1D markers for plant node position and identification.
-
-== 2D Fiducial Markers
-
-During review several 2D marker types were found:
-- AprilTag @wangAprilTag2Efficient2016
-- ARTag @fialaARTagFiducialMarker2005
-- ArUco @garrido-juradoAutomaticGenerationDetection2014
-- STag @benligiraySTagStableFiducial2019
-
-There are three roles for these fiducial markers:
-+ Have a reference objects for camera position
-+ Define the plot area for measurements
-+ Allow a pre-computing camera position using overlapping tags
-
-Although STag was tested initially, the python wrapper was not reliable and was causing segfaults @benligiraySTagStableFiducial2019.
-
-== 1D Node position markers
-
-These markers are placed in the ground at each nodes
-
 = Technical implementation
 
-== Camera position solving
+== Overview
 
-== 1D marker detection
-
-The 1D marker estimation relies on two steps, the first is to detect lines in each pictures, then, using overlaping picture to estimate the 3D position of the marker.
-
-=== Line detection
-
-
-#inline-note([Continue literature review here: https://github.com/Vincentqyw/LineSegmentsDetection])
-// LSD (Line Segment Detector) , EDLines, Hough Transform, Learned detectors (e.g., L-CNN, SOLD²)
-
-@akinlarEDLinesRealtimeLine2011
-
-=== Line matching
-
-@weiRobustLineSegment2021
-
-LIMAP: @Liu_2023_LIMAP
-
-== Node position estimation
-
+The software backend uses the following steps
+- Camera position solving: COLMAP @schoenberger2016mvs @schoenberger2016sfm
+- Ground plane detection: AprilTag @kallwiesDeterminingImprovingLocalization2020
+- Hue based stick detection: Implemented in this repository
+- Stick matching (todo)
+- Stick intersection with ground plane (todo)
 
 #bibliography("refs.bib")

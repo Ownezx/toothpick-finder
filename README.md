@@ -4,8 +4,10 @@ Just a repo for a botanist to find toothpicks in grass with a precision of (hope
 
 ## Using the software
 
-- Print the PDF with the markers, beware to use the corresponding A4 or US-Letter version as the size is critical.
-- Glue the markers on a more rigid individual surface as their flatness is critical for the localization
+The following command tools can be used. Each have a `--help` option for usage.
+- `tf-detect-toothpick `
+- `tf-detect-apriltag `
+- `tf-colmap `
 
 ## Setup
 
