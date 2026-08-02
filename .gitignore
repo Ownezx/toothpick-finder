@@ -14,8 +14,8 @@ colmap_project
 *.heic
 *.jpg
 
-# Calibration files
-calibration.json
+# Calibration files and exported lines
+*.json
 
 ## Python install info
 

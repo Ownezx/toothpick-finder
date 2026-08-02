@@ -2,6 +2,7 @@
 import argparse
 import logging
 from pathlib import Path
+import json
 
 import cv2
 import numpy as np
@@ -71,6 +72,12 @@ def toothpick_cli():
 def handle_image(image_path: str, export: bool, show: bool, config):
     lines = detect_lines(image_path, config)
 
+    image_name = Path(image_path).name
+    export_lines_to_json(f"{OUTPUT_FOLDER}/{image_name}.json", lines)
+
+    if not export and not show:
+        return
+
     out_image = generate_result_image(
         image_path,
         lines,
@@ -78,7 +85,6 @@ def handle_image(image_path: str, export: bool, show: bool, config):
     )
 
     if export:
-        image_name = Path(image_path).name
         logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
 
@@ -175,3 +181,22 @@ def show_result(input: str | np.ndarray):
     cv2.imshow("Detected Toothpicks", loaded_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+def export_lines_to_json(output_path: str, lines):
+    if lines is None:
+        data = {"lines": []}
+    else:
+        data = {
+            "lines": [
+                {
+                    "x1": int(x1),
+                    "y1": int(y1),
+                    "x2": int(x2),
+                    "y2": int(y2),
+                }
+                for x1, y1, x2, y2 in lines[:, 0]
+            ]
+        }
+
+    with open(output_path, "w") as f:
+        json.dump(data, f, indent=2)
