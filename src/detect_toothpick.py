@@ -3,6 +3,7 @@ import argparse
 import logging
 from pathlib import Path
 import json
+import math
 
 import cv2
 import numpy as np
@@ -145,7 +146,7 @@ def detect_lines(image_path: str, config):
             f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
 
     # Detect lines using Probabilistic Hough Transform
-    return cv2.HoughLinesP(
+    lines = cv2.HoughLinesP(
         binary_image_erroded,
         rho=config["rho"],
         theta=config["theta"],
@@ -153,6 +154,60 @@ def detect_lines(image_path: str, config):
         minLineLength=config["minLineLength"],
         maxLineGap=config["maxLineGap"],
     )
+
+    if lines is None:
+        return []
+
+    def line_angle(line) -> float:
+        x1, y1, x2, y2 = line
+        return math.atan2(y2 - y1, x2 - x1)
+
+    def point_to_line_distance(point, line):
+        px, py = point
+        x1, y1, x2, y2 = line
+
+        return abs(
+            (y2 - y1) * px -
+            (x2 - x1) * py +
+            x2 * y1 -
+            y2 * x1
+        ) / math.sqrt(
+            (y2 - y1) ** 2 +
+            (x2 - x1) ** 2
+        )
+
+    # Filter lines to get the longest one
+    filtered_lines = []
+    for i in range(len(lines)):
+        line = lines[i][0]
+
+        angle = line_angle(line)
+
+        duplicate = False
+        for k in range(len(filtered_lines)):
+            other_line = filtered_lines[k]
+            other_angle = line_angle(other_line)
+
+            if math.fabs(angle - other_angle) > config["duplicate_line_max_angle"]:
+                duplicate = True
+                break
+
+            # Check distance between extremities
+            distances = [
+                point_to_line_distance((line[0], line[1]), other_line),
+                point_to_line_distance((line[2], line[3]), other_line),
+                point_to_line_distance((other_line[0], other_line[1]), line),
+                point_to_line_distance((other_line[2], other_line[3]), line),
+            ]
+
+            if max(distances) < config["duplicate_line_max_distance"]:
+                duplicate = True
+                break
+
+        if not duplicate:
+            filtered_lines.append(line)
+
+    return [line.tolist() for line in filtered_lines]
 
 
 def generate_result_image(input: str | np.ndarray, lines: MatLike, config):
@@ -166,7 +221,7 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike, config):
     overlay = loaded_image.copy()
     # Draw detected lines
     if lines is not None:
-        for x1, y1, x2, y2 in lines[:, 0]:
+        for x1, y1, x2, y2 in lines[:]:
             cv2.line(overlay, (x1, y1), (x2, y2), config["overlay_color"], 10)
     return cv2.addWeighted(
         overlay,
@@ -191,20 +246,5 @@ def show_result(input: str | np.ndarray):
 
 
 def export_lines_to_json(output_path: str, lines):
-    if lines is None:
-        data = {"lines": []}
-    else:
-        data = {
-            "lines": [
-                {
-                    "x1": int(x1),
-                    "y1": int(y1),
-                    "x2": int(x2),
-                    "y2": int(y2),
-                }
-                for x1, y1, x2, y2 in lines[:, 0]
-            ]
-        }
-
     with open(output_path, "w") as f:
-        json.dump(data, f, indent=2)
+        json.dump(lines, f, indent=2)

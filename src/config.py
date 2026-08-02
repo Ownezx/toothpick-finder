@@ -21,6 +21,8 @@ DETECT_CONFIG = {
     "high_HSV_blacklist": [90, 255, 255],
     "low_HSV_whitelist": [100, 140, 60],
     "high_HSV_whitelist": [150, 255, 255],
+    "duplicate_line_max_angle": 3,
+    "duplicate_line_max_distance": 5,
 }
 """Default configuration file for toothpick detector"""
 
