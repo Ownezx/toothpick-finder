@@ -77,9 +77,10 @@ def generate_result_image(input: str | np.ndarray, detections, config):
     elif type(input) is np.ndarray:
         loaded_image = input
     else:
-        raise TypeError(f"Invalid image, needs path or ndarray, got {type(input)}")
+        raise TypeError(
+            f"Invalid image, needs path or ndarray, got {type(input)}")
 
-    overlay = loaded_image.copy()  # pyright: ignore[reportOptionalMemberAccess]
+    overlay = loaded_image.copy()
 
     for detection in detections:
         corners = np.squeeze(detection["lb-rb-rt-lt"])

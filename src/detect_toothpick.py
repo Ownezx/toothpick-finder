@@ -106,7 +106,8 @@ def detect_lines(image_path: str, config):
         np.array(config["high_HSV_blacklist"]),
     )
     blacklist_mask = cv2.bitwise_not(blacklist_mask)
-    blacklist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=blacklist_mask)
+    blacklist_image = cv2.bitwise_and(
+        loaded_image, loaded_image, mask=blacklist_mask)
 
     # Conserve only selected hues
     whitelist_mask = cv2.inRange(
@@ -114,7 +115,8 @@ def detect_lines(image_path: str, config):
         np.array(config["low_HSV_whitelist"]),
         np.array(config["high_HSV_whitelist"]),
     )
-    whitelist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=whitelist_mask)
+    whitelist_image = cv2.bitwise_and(
+        loaded_image, loaded_image, mask=whitelist_mask)
 
     masked_image = cv2.bitwise_and(whitelist_image, blacklist_image)
 
@@ -124,18 +126,23 @@ def detect_lines(image_path: str, config):
     kernel = cv2.getStructuringElement(
         cv2.MORPH_RECT, (config["line_width"], config["line_width"])
     )
-    binary_image_erroded = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
+    binary_image_erroded = cv2.morphologyEx(
+        binary_image, cv2.MORPH_OPEN, kernel)
 
     if DEBUG:
         image_name = Path(image_path).stem
         logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
+        assert cv2.imwrite(
+            f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
+        assert cv2.imwrite(
+            f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
+        assert cv2.imwrite(
+            f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
         assert cv2.imwrite(
             f"{OUTPUT_FOLDER}/{image_name}_ceil_errode.png", binary_image_erroded * 255
         )
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
+        assert cv2.imwrite(
+            f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
 
     # Detect lines using Probabilistic Hough Transform
     return cv2.HoughLinesP(
@@ -181,6 +188,7 @@ def show_result(input: str | np.ndarray):
     cv2.imshow("Detected Toothpicks", loaded_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
 
 def export_lines_to_json(output_path: str, lines):
     if lines is None:

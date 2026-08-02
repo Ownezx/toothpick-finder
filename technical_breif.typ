@@ -94,9 +94,9 @@ Before taking any measurements the following must be verified:
 - The testing area must be in diffuse lighting conditions, ideal outdoor conditions would be uniform cloud layers during the day
 
 You should be avoiding
-  - Direct sunlight conditions
-  - Rapidly changing lighting such as sunset or passing cloud
-  - Reflecting surfaces
+- Direct sunlight conditions
+- Rapidly changing lighting such as sunset or passing cloud
+- Reflecting surfaces
 
 
 == Measurement

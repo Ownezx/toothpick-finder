@@ -5,6 +5,7 @@ Just a repo for a botanist to find toothpicks in grass with a precision of (hope
 ## Using the software
 
 The following command tools can be used. Each have a `--help` option for usage.
+
 - `tf-detect-toothpick `
 - `tf-detect-apriltag `
 - `tf-colmap `

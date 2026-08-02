@@ -2,19 +2,16 @@
 name = "toothpick-finder"
 version = "0.0.0"
 dependencies = [
-    "apriltag-python==3.4.5",
-    "numpy==2.4.2",
-    "opencv-python==4.13.0.92",
-    "pycolmap==3.13.0",
+  "apriltag-python==3.4.5",
+  "numpy==2.4.2",
+  "opencv-python==4.13.0.92",
+  "pycolmap==3.13.0",
+  "scikit-image==0.26.0",
 ]
 
 requires-python = ">=3.14"
-authors = [
-  {name = "Elliot Drees", email = "elliot@trellick.net"},
-]
-maintainers = [
-  {name = "Elliot Drees", email = "elliot@trellick.net"}
-]
+authors = [{ name = "Elliot Drees", email = "elliot@trellick.net" }]
+maintainers = [{ name = "Elliot Drees", email = "elliot@trellick.net" }]
 description = "This program allows to mark 2d spot on the surface of uneven terrain. It uses toothpicks in a area"
 readme = "README.md"
 license = "MIT"
