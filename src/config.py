@@ -69,9 +69,7 @@ def _validate_and_merge(data: dict[str, Any]) -> DetectConfig:
         # Handle tuple fields stored as JSON lists.
         if expected == tuple[int, int, int]:
             if not isinstance(value, (list, tuple)) or len(value) != 3:
-                raise TypeError(
-                    f"{field.name!r} must contain exactly three integers."
-                )
+                raise TypeError(f"{field.name!r} must contain exactly three integers.")
             value = tuple(int(v) for v in value)
 
         elif expected == int:
@@ -124,8 +122,6 @@ def load_calibration(
         return config
 
     except json.JSONDecodeError as exc:
-        raise ValueError(
-            f"Invalid JSON in calibration file: {config_path}"
-        ) from exc
+        raise ValueError(f"Invalid JSON in calibration file: {config_path}") from exc
 
     return _validate_and_merge(raw)

@@ -9,7 +9,7 @@ import numpy as np
 from cv2.typing import MatLike
 from numpy.typing import NDArray
 
-from config import load_calibration, DetectConfig
+from config import DetectConfig, load_calibration
 from utils import add_common_arguments, validate_arguments
 
 logger = logging.getLogger(__name__)
@@ -92,10 +92,11 @@ def handle_image(image_path: str, export: bool, show: bool, config: DetectConfig
         show_result(out_image)
 
 
-def detect_lines(image_path: str, config: DetectConfig):
+def detect_lines(image_path: str, config: DetectConfig) -> list[list[int]]:
 
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    assert loaded_image
 
     # Remove selected hues
     hsv = cv2.cvtColor(loaded_image, cv2.COLOR_BGR2HSV)
@@ -106,8 +107,7 @@ def detect_lines(image_path: str, config: DetectConfig):
         np.array(config.high_HSV_blacklist),
     )
     blacklist_mask = cv2.bitwise_not(blacklist_mask)
-    blacklist_image = cv2.bitwise_and(
-        loaded_image, loaded_image, mask=blacklist_mask)
+    blacklist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=blacklist_mask)
 
     # Conserve only selected hues
     whitelist_mask = cv2.inRange(
@@ -115,8 +115,7 @@ def detect_lines(image_path: str, config: DetectConfig):
         np.array(config.low_HSV_whitelist),
         np.array(config.high_HSV_whitelist),
     )
-    whitelist_image = cv2.bitwise_and(
-        loaded_image, loaded_image, mask=whitelist_mask)
+    whitelist_image = cv2.bitwise_and(loaded_image, loaded_image, mask=whitelist_mask)
 
     masked_image = cv2.bitwise_and(whitelist_image, blacklist_image)
 
@@ -126,23 +125,18 @@ def detect_lines(image_path: str, config: DetectConfig):
     kernel = cv2.getStructuringElement(
         cv2.MORPH_RECT, (config.line_width, config.line_width)
     )
-    binary_image_erroded = cv2.morphologyEx(
-        binary_image, cv2.MORPH_OPEN, kernel)
+    binary_image_erroded = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
 
     if DEBUG:
         image_name = Path(image_path).stem
         logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
         assert cv2.imwrite(
             f"{OUTPUT_FOLDER}/{image_name}_ceil_errode.png", binary_image_erroded * 255
         )
-        assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
+        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
 
     # Detect lines using Probabilistic Hough Transform
     lines = cv2.HoughLinesP(
@@ -208,9 +202,10 @@ def detect_lines(image_path: str, config: DetectConfig):
     return [line.tolist() for line in filtered_lines]
 
 
-def generate_result_image(input: str | np.ndarray, lines: MatLike, config):
+def generate_result_image(input: str | np.ndarray, lines: list[list[int]], config):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
+        assert loaded_image
     elif type(input) is NDArray:
         loaded_image = input
     else:
@@ -233,6 +228,7 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike, config):
 def show_result(input: str | np.ndarray):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
+        assert loaded_image
     elif type(input) is np.ndarray:
         loaded_image = input
     else:
@@ -244,7 +240,7 @@ def show_result(input: str | np.ndarray):
 
 
 def export_lines_to_json(output_path: str, lines):
-    out = dict()
+    out = {}
     out["lines"] = lines
     with open(output_path, "w") as f:
         json.dump(out, f, indent=2)

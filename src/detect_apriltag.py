@@ -1,13 +1,13 @@
 import argparse
+import json
 import logging
 from pathlib import Path
-import json
 
 import apriltag
 import cv2
 import numpy as np
 
-from config import load_calibration, DetectConfig
+from config import DetectConfig, load_calibration
 from utils import add_common_arguments, validate_arguments
 
 OUTPUT_FOLDER = ""
@@ -63,7 +63,7 @@ def handle_image(image_path: str, export: bool, config: DetectConfig):
     # todo pre process the image to have the most contrast for the april tag
     detections = detector.detect(loaded_image)  # type: ignore
     image_name = Path(image_path).name
-    export_april_tag_to_json(f"{OUTPUT_FOLDER}/{image_name}.json", detections)
+    export_april_tag_to_json(Path(f"{OUTPUT_FOLDER}/{image_name}.json"), detections)
 
     if export:
         out_image = generate_result_image(image_path, detections, config)
@@ -76,11 +76,11 @@ def handle_image(image_path: str, export: bool, config: DetectConfig):
 def generate_result_image(input: str | np.ndarray, detections, config: DetectConfig):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
+        assert loaded_image
     elif type(input) is np.ndarray:
         loaded_image = input
     else:
-        raise TypeError(
-            f"Invalid image, needs path or ndarray, got {type(input)}")
+        raise TypeError(f"Invalid image, needs path or ndarray, got {type(input)}")
 
     overlay = loaded_image.copy()
 
@@ -99,8 +99,9 @@ def export_april_tag_to_json(output_path: Path, detections):
     detection_list = []
     for detection in detections:
         detection_list.append(
-            [detection["id"], np.squeeze(detection["lb-rb-rt-lt"]).tolist()])
-    out_dict = dict()
+            [detection["id"], np.squeeze(detection["lb-rb-rt-lt"]).tolist()]
+        )
+    out_dict = {}
     out_dict["april_tags"] = detection_list
 
     with open(output_path, "w") as f:
