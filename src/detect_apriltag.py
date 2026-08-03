@@ -7,7 +7,7 @@ import apriltag
 import cv2
 import numpy as np
 
-from config import load_calibration
+from config import load_calibration, DetectConfig
 from utils import add_common_arguments, validate_arguments
 
 OUTPUT_FOLDER = ""
@@ -47,7 +47,7 @@ def apriltag_cli():
         logger.debug(f"Detections : {detection}")
         return
 
-    config = load_calibration(launch_arguments.input, True)
+    config = load_calibration(Path(launch_arguments.input), True)
     for image in list(Path(launch_arguments.input).glob("*.jpg")):
         logger.info(f"Handling image {image}.")
         handle_image(
@@ -57,7 +57,7 @@ def apriltag_cli():
         )
 
 
-def handle_image(image_path: str, export: bool, config):
+def handle_image(image_path: str, export: bool, config: DetectConfig):
     loaded_image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
 
     # todo pre process the image to have the most contrast for the april tag
@@ -73,7 +73,7 @@ def handle_image(image_path: str, export: bool, config):
     return detections
 
 
-def generate_result_image(input: str | np.ndarray, detections, config):
+def generate_result_image(input: str | np.ndarray, detections, config: DetectConfig):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
     elif type(input) is np.ndarray:
@@ -89,7 +89,7 @@ def generate_result_image(input: str | np.ndarray, detections, config):
         for point in corners:
             x, y = int(point[0]), int(point[1])
             cv2.circle(
-                overlay, (x, y), radius=10, color=config["overlay_color"], thickness=-1
+                overlay, (x, y), radius=10, color=config.overlay_color, thickness=-1
             )
 
     return overlay

@@ -1,16 +1,15 @@
-# type: ignore
 import argparse
-import logging
-from pathlib import Path
 import json
+import logging
 import math
+from pathlib import Path
 
 import cv2
 import numpy as np
 from cv2.typing import MatLike
 from numpy.typing import NDArray
 
-from config import load_calibration
+from config import load_calibration, DetectConfig
 from utils import add_common_arguments, validate_arguments
 
 logger = logging.getLogger(__name__)
@@ -59,7 +58,7 @@ def toothpick_cli():
         )
         return
 
-    config = load_calibration(launch_arguments.input, True)
+    config = load_calibration(Path(launch_arguments.input), True)
     for image in list(Path(launch_arguments.input).glob("*.jpg")):
         logger.info(f"Handling image {image}.")
         handle_image(
@@ -70,7 +69,7 @@ def toothpick_cli():
         )
 
 
-def handle_image(image_path: str, export: bool, show: bool, config):
+def handle_image(image_path: str, export: bool, show: bool, config: DetectConfig):
     lines = detect_lines(image_path, config)
 
     image_name = Path(image_path).name
@@ -93,7 +92,7 @@ def handle_image(image_path: str, export: bool, show: bool, config):
         show_result(out_image)
 
 
-def detect_lines(image_path: str, config):
+def detect_lines(image_path: str, config: DetectConfig):
 
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -103,8 +102,8 @@ def detect_lines(image_path: str, config):
 
     blacklist_mask = cv2.inRange(
         hsv,
-        np.array(config["low_HSV_blacklist"]),
-        np.array(config["high_HSV_blacklist"]),
+        np.array(config.low_HSV_blacklist),
+        np.array(config.high_HSV_blacklist),
     )
     blacklist_mask = cv2.bitwise_not(blacklist_mask)
     blacklist_image = cv2.bitwise_and(
@@ -113,8 +112,8 @@ def detect_lines(image_path: str, config):
     # Conserve only selected hues
     whitelist_mask = cv2.inRange(
         hsv,
-        np.array(config["low_HSV_whitelist"]),
-        np.array(config["high_HSV_whitelist"]),
+        np.array(config.low_HSV_whitelist),
+        np.array(config.high_HSV_whitelist),
     )
     whitelist_image = cv2.bitwise_and(
         loaded_image, loaded_image, mask=whitelist_mask)
@@ -125,7 +124,7 @@ def detect_lines(image_path: str, config):
     binary_image = np.any(masked_image != 0, axis=2).astype(np.uint8)
 
     kernel = cv2.getStructuringElement(
-        cv2.MORPH_RECT, (config["line_width"], config["line_width"])
+        cv2.MORPH_RECT, (config.line_width, config.line_width)
     )
     binary_image_erroded = cv2.morphologyEx(
         binary_image, cv2.MORPH_OPEN, kernel)
@@ -148,11 +147,11 @@ def detect_lines(image_path: str, config):
     # Detect lines using Probabilistic Hough Transform
     lines = cv2.HoughLinesP(
         binary_image_erroded,
-        rho=config["rho"],
-        theta=config["theta"],
-        threshold=config["threshold"],
-        minLineLength=config["minLineLength"],
-        maxLineGap=config["maxLineGap"],
+        rho=config.rho,
+        theta=config.theta,
+        threshold=config.threshold,
+        minLineLength=config.minLineLength,
+        maxLineGap=config.maxLineGap,
     )
 
     if lines is None:
@@ -166,21 +165,12 @@ def detect_lines(image_path: str, config):
         px, py = point
         x1, y1, x2, y2 = line
 
-        return abs(
-            (y2 - y1) * px -
-            (x2 - x1) * py +
-            x2 * y1 -
-            y2 * x1
-        ) / math.sqrt(
-            (y2 - y1) ** 2 +
-            (x2 - x1) ** 2
+        return abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) / math.sqrt(
+            (y2 - y1) ** 2 + (x2 - x1) ** 2
         )
 
     def line_length(line):
-        return math.sqrt(
-            (line[2] - line[0]) ** 2 +
-            (line[3] - line[1]) ** 2
-        )
+        return math.sqrt((line[2] - line[0]) ** 2 + (line[3] - line[1]) ** 2)
 
     # This can be improved both for speed and accuracy. Taking the longest line is a bit silly.
     # Filter lines to get the longest one
@@ -195,7 +185,7 @@ def detect_lines(image_path: str, config):
             other_line = filtered_lines[k]
             other_angle = line_angle(other_line)
 
-            if math.fabs(angle - other_angle) > config["duplicate_line_max_angle"]:
+            if math.fabs(angle - other_angle) > config.duplicate_line_max_angle:
                 continue
 
             # Check distance between extremities
@@ -206,7 +196,7 @@ def detect_lines(image_path: str, config):
                 point_to_line_distance((other_line[2], other_line[3]), line),
             ]
 
-            if max(distances) < config["duplicate_line_max_distance"]:
+            if max(distances) < config.duplicate_line_max_distance:
                 duplicate = True
                 if line_length(line) > line_length(other_line):
                     filtered_lines[k] = line
@@ -230,12 +220,12 @@ def generate_result_image(input: str | np.ndarray, lines: MatLike, config):
     # Draw detected lines
     if lines is not None:
         for x1, y1, x2, y2 in lines[:]:
-            cv2.line(overlay, (x1, y1), (x2, y2), config["overlay_color"], 10)
+            cv2.line(overlay, (x1, y1), (x2, y2), config.overlay_color, 10)
     return cv2.addWeighted(
         overlay,
-        config["overlay_alpha"],
+        config.overlay_alpha,
         loaded_image,
-        1 - config["overlay_alpha"],
+        1 - config.overlay_alpha,
         0,
     )
 
