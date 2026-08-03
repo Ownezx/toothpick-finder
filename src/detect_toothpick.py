@@ -182,6 +182,7 @@ def detect_lines(image_path: str, config):
             (line[3] - line[1]) ** 2
         )
 
+    # This can be improved both for speed and accuracy. Taking the longest line is a bit silly.
     # Filter lines to get the longest one
     filtered_lines = []
     for i in range(len(lines)):
