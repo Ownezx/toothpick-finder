@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+import json
 
 import apriltag
 import cv2
@@ -61,10 +62,11 @@ def handle_image(image_path: str, export: bool, config):
 
     # todo pre process the image to have the most contrast for the april tag
     detections = detector.detect(loaded_image)  # type: ignore
+    image_name = Path(image_path).name
+    export_april_tag_to_json(f"{OUTPUT_FOLDER}/{image_name}.json", detections)
 
     if export:
         out_image = generate_result_image(image_path, detections, config)
-        image_name = Path(image_path).name
         logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
         assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
 
@@ -91,3 +93,15 @@ def generate_result_image(input: str | np.ndarray, detections, config):
             )
 
     return overlay
+
+
+def export_april_tag_to_json(output_path: Path, detections):
+    detection_list = []
+    for detection in detections:
+        detection_list.append(
+            [detection["id"], np.squeeze(detection["lb-rb-rt-lt"]).tolist()])
+    out_dict = dict()
+    out_dict["april_tags"] = detection_list
+
+    with open(output_path, "w") as f:
+        json.dump(out_dict, f, indent=2)
