@@ -176,6 +176,12 @@ def detect_lines(image_path: str, config):
             (x2 - x1) ** 2
         )
 
+    def line_length(line):
+        return math.sqrt(
+            (line[2] - line[0]) ** 2 +
+            (line[3] - line[1]) ** 2
+        )
+
     # Filter lines to get the longest one
     filtered_lines = []
     for i in range(len(lines)):
@@ -189,8 +195,7 @@ def detect_lines(image_path: str, config):
             other_angle = line_angle(other_line)
 
             if math.fabs(angle - other_angle) > config["duplicate_line_max_angle"]:
-                duplicate = True
-                break
+                continue
 
             # Check distance between extremities
             distances = [
@@ -202,6 +207,8 @@ def detect_lines(image_path: str, config):
 
             if max(distances) < config["duplicate_line_max_distance"]:
                 duplicate = True
+                if line_length(line) > line_length(other_line):
+                    filtered_lines[k] = line
                 break
 
         if not duplicate:
@@ -246,5 +253,7 @@ def show_result(input: str | np.ndarray):
 
 
 def export_lines_to_json(output_path: str, lines):
+    out = dict()
+    out["lines"] = lines
     with open(output_path, "w") as f:
-        json.dump(lines, f, indent=2)
+        json.dump(out, f, indent=2)
