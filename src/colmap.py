@@ -1,4 +1,5 @@
 import argparse
+import json
 from pathlib import Path
 
 import pycolmap
@@ -29,7 +30,7 @@ def colmap_cli() -> None:
     parser.add_argument(
         "-a",
         "--action",
-        choices=["MapImages"],
+        choices=["MapImages", "InsertApril"],
         help="Action to do on the colmap project",
     )
 
@@ -45,8 +46,13 @@ def colmap_cli() -> None:
     if not Path(args.project_dir).exists():
         raise ValueError("Please initialize a project with 'tf-colmap --init'")
 
+    project_dir = Path(args.project_dir)
+
     if args.action == "MapImages":
         run_incremental_mapping(args.project_dir)
+        return
+    elif args.action == "InsertApril":
+        insert_april_tag_in_db(project_dir)
         return
 
     parser.print_help()
@@ -108,3 +114,11 @@ def run_incremental_mapping(project_dir: Path = Path("colmap")):
         image_path=str(image_path),
         output_path=str(sparse_dir),
     )
+
+
+def insert_april_tag_in_db(project_folder: Path):
+
+    data = {}
+    for json_file in (project_folder / "april_tags").glob("*.json"):
+        with json_file.open("r", encoding="utf-8") as f:
+            data[json_file.stem] = json.load(f)["april_tags"]
