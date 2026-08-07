@@ -6,7 +6,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from cv2.typing import MatLike
 from numpy.typing import NDArray
 
 from config import DetectConfig, load_calibration
