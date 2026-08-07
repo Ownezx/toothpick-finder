@@ -105,7 +105,7 @@ You should be avoiding
 - Place the sticks in the ground
 - Set your camera to manual to avoid
   - On iphone, long press on the camera until the AE/AF lock indication apears at the top
-- Take pictures in a circular manner around the target area at several levels with a lot of picture overlap\
+- Take pictures in a circular manner in landscape ratio around the target area at several levels with a lot of picture overlap\
   The begining of this video is a good example of how to take the pictures: https://www.youtube.com/watch?v=6VjA9EfkFSc
 
 == Data processing using toothpick-finder
