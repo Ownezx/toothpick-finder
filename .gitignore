@@ -13,6 +13,7 @@ colmap_project
 *.png
 *.heic
 *.jpg
+*.jpeg
 
 # Calibration files and exported lines
 *.json

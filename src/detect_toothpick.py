@@ -58,7 +58,9 @@ def toothpick_cli():
         return
 
     config = load_calibration(Path(launch_arguments.input), True)
-    for image in list(Path(launch_arguments.input).glob("*.jpg")):
+    for image in list(Path(launch_arguments.input).glob("*.jpg")) + list(
+        Path(launch_arguments.input).glob("*.jpeg")
+    ):
         logger.info(f"Handling image {image}.")
         handle_image(
             str(image),
@@ -95,7 +97,7 @@ def detect_lines(image_path: str, config: DetectConfig) -> list[list[int]]:
 
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-    assert loaded_image
+    assert loaded_image is not None
 
     # Remove selected hues
     hsv = cv2.cvtColor(loaded_image, cv2.COLOR_BGR2HSV)
@@ -204,7 +206,7 @@ def detect_lines(image_path: str, config: DetectConfig) -> list[list[int]]:
 def generate_result_image(input: str | np.ndarray, lines: list[list[int]], config):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
-        assert loaded_image
+        assert loaded_image is not None
     elif type(input) is NDArray:
         loaded_image = input
     else:
@@ -227,7 +229,7 @@ def generate_result_image(input: str | np.ndarray, lines: list[list[int]], confi
 def show_result(input: str | np.ndarray):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
-        assert loaded_image
+        assert loaded_image is not None
     elif type(input) is np.ndarray:
         loaded_image = input
     else:

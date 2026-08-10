@@ -48,7 +48,9 @@ def apriltag_cli():
         return
 
     config = load_calibration(Path(launch_arguments.input), True)
-    for image in list(Path(launch_arguments.input).glob("*.jpg")):
+    for image in list(Path(launch_arguments.input).glob("*.jpg")) + list(
+        Path(launch_arguments.input).glob("*.jpeg")
+    ):
         logger.info(f"Handling image {image}.")
         handle_image(
             str(image),
@@ -76,7 +78,7 @@ def handle_image(image_path: str, export: bool, config: DetectConfig):
 def generate_result_image(input: str | np.ndarray, detections, config: DetectConfig):
     if type(input) is str:
         loaded_image = cv2.imread(input, cv2.IMREAD_COLOR)
-        assert loaded_image
+        assert loaded_image is not None
     elif type(input) is np.ndarray:
         loaded_image = input
     else:
