@@ -13,21 +13,21 @@ def colmap_cli() -> None:
         description="Colmap project utility for the toothpicker finder project."
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-p",
         "--project-dir",
         type=Path,
         default=Path("colmap_project"),
         help="Directory where the COLMAP project will be created.",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--init",
         action="store_true",
         help="Initializes a new colmap project",
     )
 
     # Configure the multi-choice argument
-    parser.add_argument(
+    _ = parser.add_argument(
         "-a",
         "--action",
         choices=["MapImages", "InsertApril"],
@@ -81,7 +81,7 @@ def initialize_colmap_project(
     image_path.mkdir()
 
     project_file = Path(project_dir) / "project.ini"
-    project_file.write_text(
+    _ = project_file.write_text(
         f"""
 database_path={database_path.resolve()}
 image_path={Path(image_path).resolve()}
@@ -109,7 +109,7 @@ def run_incremental_mapping(project_dir: Path = Path("colmap")):
         database_path=str(database_path),
     )
 
-    pycolmap.incremental_mapping(
+    _ = pycolmap.incremental_mapping(
         database_path=str(database_path),
         image_path=str(image_path),
         output_path=str(sparse_dir),

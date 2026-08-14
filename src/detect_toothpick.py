@@ -29,7 +29,7 @@ def toothpick_cli():
         default_output="tfd_toothpick_output",
         object_name="toothpick",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
@@ -236,7 +236,7 @@ def show_result(input: str | np.ndarray):
         raise TypeError("Invalid image, needs path or ndarray")
 
     cv2.imshow("Detected Toothpicks", loaded_image)
-    cv2.waitKey(0)
+    _ = cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 

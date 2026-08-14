@@ -10,42 +10,42 @@ def add_common_arguments(
     default_output: str,
     object_name: str,
 ):
-    parser.add_argument(
+    _ = parser.add_argument(
         "-i",
         "--input",
         required=True,
         help="Path to the input folder or image.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-o",
         "--output",
         default=default_output,
         help="Output file (default: %(default)s)",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-e",
         "--export-image",
         action="store_true",
         help=f"Exports images with the detected {object_name}.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-s",
         "--show-images",
         action="store_true",
         help="Shows the images as they are generated.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-f",
         "--force",
         action="store_true",
         help="Overwrite existing output without prompting.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
