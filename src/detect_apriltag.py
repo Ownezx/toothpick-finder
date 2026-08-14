@@ -10,9 +10,6 @@ import numpy as np
 from config import DetectConfig, load_calibration
 from utils import add_common_arguments, validate_arguments
 
-OUTPUT_FOLDER = ""
-"""Output folder"""
-
 logger = logging.getLogger(__name__)
 
 # Setup april tag detector
@@ -31,9 +28,6 @@ def apriltag_cli():
     launch_arguments = parser.parse_args()
     validate_arguments(launch_arguments)
 
-    global OUTPUT_FOLDER
-    OUTPUT_FOLDER = launch_arguments.output
-
     logger.info(f"Staring program with input {launch_arguments.input}")
 
     input_is_dir = Path(launch_arguments.input).is_dir()
@@ -41,6 +35,7 @@ def apriltag_cli():
         config = load_calibration(Path(launch_arguments.input).parent, True)
         detection = handle_image(
             launch_arguments.input,
+            launch_arguments.output,
             launch_arguments.export_image,
             config,
         )
@@ -54,23 +49,26 @@ def apriltag_cli():
         logger.info(f"Handling image {image}.")
         handle_image(
             str(image),
+            launch_arguments.output,
             launch_arguments.export_image,
             config,
         )
 
 
-def handle_image(image_path: str, export: bool, config: DetectConfig):
+def handle_image(
+    image_path: str, output_folder: str, export: bool, config: DetectConfig
+):
     loaded_image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
 
     # todo pre process the image to have the most contrast for the april tag
     detections = detector.detect(loaded_image)  # type: ignore
     image_name = Path(image_path).name
-    export_april_tag_to_json(Path(f"{OUTPUT_FOLDER}/{image_name}.json"), detections)
+    export_april_tag_to_json(Path(f"{output_folder}/{image_name}.json"), detections)
 
     if export:
         out_image = generate_result_image(image_path, detections, config)
-        logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
+        logger.debug(f"Exporting image to {output_folder}/{image_name}")
+        assert cv2.imwrite(f"{output_folder}/{image_name}", out_image)
 
     return detections
 

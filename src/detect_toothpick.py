@@ -14,12 +14,6 @@ from utils import add_common_arguments, validate_arguments
 logger = logging.getLogger(__name__)
 
 
-OUTPUT_FOLDER = ""
-"""Output folder"""
-DEBUG = False
-"""When active, exports extra images for debugging purposes"""
-
-
 def toothpick_cli():
     parser = argparse.ArgumentParser(
         description="This command line tool allows to detect lines in pictures. It is recommended to use a dataset folder with all the images within the same folder as a file to finetune will be created inside of it."
@@ -38,12 +32,6 @@ def toothpick_cli():
     launch_arguments = parser.parse_args()
     validate_arguments(launch_arguments)
 
-    global OUTPUT_FOLDER
-    OUTPUT_FOLDER = launch_arguments.output
-
-    global DEBUG
-    DEBUG = launch_arguments.debug
-
     logger.info(f"Staring program with input {launch_arguments.input}")
 
     input_is_dir = Path(launch_arguments.input).is_dir()
@@ -51,6 +39,8 @@ def toothpick_cli():
         config = load_calibration(Path(launch_arguments.input).parent, True)
         handle_image(
             launch_arguments.input,
+            launch_arguments.output,
+            launch_arguments.debug,
             launch_arguments.export_image,
             launch_arguments.show_images,
             config,
@@ -64,17 +54,26 @@ def toothpick_cli():
         logger.info(f"Handling image {image}.")
         handle_image(
             str(image),
+            launch_arguments.output,
+            launch_arguments.debug,
             launch_arguments.export_image,
             launch_arguments.show_images,
             config,
         )
 
 
-def handle_image(image_path: str, export: bool, show: bool, config: DetectConfig):
-    lines = detect_lines(image_path, config)
+def handle_image(
+    image_path: str,
+    output_folder: str,
+    debug: bool,
+    export: bool,
+    show: bool,
+    config: DetectConfig,
+):
+    lines = detect_lines(image_path, output_folder, debug, config)
 
     image_name = Path(image_path).name
-    export_lines_to_json(f"{OUTPUT_FOLDER}/{image_name}.json", lines)
+    export_lines_to_json(f"{output_folder}/{image_name}.json", lines)
 
     if not export and not show:
         return
@@ -86,14 +85,16 @@ def handle_image(image_path: str, export: bool, show: bool, config: DetectConfig
     )
 
     if export:
-        logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}", out_image)
+        logger.debug(f"Exporting image to {output_folder}/{image_name}")
+        assert cv2.imwrite(f"{output_folder}/{image_name}", out_image)
 
     if show:
         show_result(out_image)
 
 
-def detect_lines(image_path: str, config: DetectConfig) -> list[list[int]]:
+def detect_lines(
+    image_path: str, output_folder: str, debug: bool, config: DetectConfig
+) -> list[list[int]]:
 
     # Load the image
     loaded_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -128,16 +129,16 @@ def detect_lines(image_path: str, config: DetectConfig) -> list[list[int]]:
     )
     binary_image_erroded = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
 
-    if DEBUG:
+    if debug:
         image_name = Path(image_path).stem
-        logger.debug(f"Exporting image to {OUTPUT_FOLDER}/{image_name}")
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask1.png", blacklist_image)
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask2.png", whitelist_image)
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_mask3.png", masked_image)
+        logger.debug(f"Exporting image to {output_folder}/{image_name}")
+        assert cv2.imwrite(f"{output_folder}/{image_name}_mask1.png", blacklist_image)
+        assert cv2.imwrite(f"{output_folder}/{image_name}_mask2.png", whitelist_image)
+        assert cv2.imwrite(f"{output_folder}/{image_name}_mask3.png", masked_image)
         assert cv2.imwrite(
-            f"{OUTPUT_FOLDER}/{image_name}_ceil_errode.png", binary_image_erroded * 255
+            f"{output_folder}/{image_name}_ceil_errode.png", binary_image_erroded * 255
         )
-        assert cv2.imwrite(f"{OUTPUT_FOLDER}/{image_name}_original.jpg", loaded_image)
+        assert cv2.imwrite(f"{output_folder}/{image_name}_original.jpg", loaded_image)
 
     # Detect lines using Probabilistic Hough Transform
     lines = cv2.HoughLinesP(
