@@ -2,13 +2,14 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from tomllib import load
 
 import apriltag
 import cv2
 import numpy as np
 
 from config import DetectConfig, load_calibration
-from utils import add_common_arguments, validate_arguments
+from utils import CommonNamespace, add_common_arguments, validate_arguments
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,8 @@ def apriltag_cli():
         default_output="tfd_apriltag_output",
         object_name="AprilTag",
     )
-    launch_arguments = parser.parse_args()
-    validate_arguments(launch_arguments)
+    launch_arguments = parser.parse_args(namespace=CommonNamespace)
+    validate_arguments(launch_arguments())
 
     logger.info(f"Staring program with input {launch_arguments.input}")
 
@@ -47,7 +48,7 @@ def apriltag_cli():
         Path(launch_arguments.input).glob("*.jpeg")
     ):
         logger.info(f"Handling image {image}.")
-        handle_image(
+        _ = handle_image(
             str(image),
             launch_arguments.output,
             launch_arguments.export_image,
@@ -59,6 +60,7 @@ def handle_image(
     image_path: str, output_folder: str, export: bool, config: DetectConfig
 ):
     loaded_image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    assert loaded_image is not None
 
     # todo pre process the image to have the most contrast for the april tag
     detections = detector.detect(loaded_image)  # type: ignore

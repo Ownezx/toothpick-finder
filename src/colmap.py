@@ -5,6 +5,11 @@ from pathlib import Path
 import pycolmap
 
 
+class ColmapNamespace(argparse.Namespace):
+    project_dir: str = ""
+    init: bool = False
+
+
 def colmap_cli() -> None:
     """
     Colmap project utility for the toothpicker finder project
@@ -34,10 +39,10 @@ def colmap_cli() -> None:
         help="Action to do on the colmap project",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=ColmapNamespace)
 
     if args.init:
-        initialize_colmap_project(args.project_dir)
+        _ = initialize_colmap_project(Path(args.project_dir))
         print(
             f"Finished initializing, you can now place your images in {args.project_dir}/images"
         )

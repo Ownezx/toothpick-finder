@@ -4,6 +4,15 @@ import shutil
 from pathlib import Path
 
 
+class CommonNamespace(argparse.Namespace):
+    input: str = ""
+    output: str = ""
+    export_image: bool = False
+    show_images: bool = False
+    force: bool = False
+    verbose: bool = False
+
+
 def add_common_arguments(
     parser: argparse.ArgumentParser,
     *,
@@ -53,7 +62,7 @@ def add_common_arguments(
     )
 
 
-def validate_arguments(launch_arguments: argparse.Namespace):
+def validate_arguments(launch_arguments: CommonNamespace):
     if launch_arguments.verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:

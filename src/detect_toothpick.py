@@ -9,7 +9,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 from config import DetectConfig, load_calibration
-from utils import add_common_arguments, validate_arguments
+from utils import CommonNamespace, add_common_arguments, validate_arguments
+
+
+class ToothpickNamespace(CommonNamespace):
+    debug: bool = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +34,8 @@ def toothpick_cli():
         action="store_true",
         help="Export additional intermediate images.",
     )
-    launch_arguments = parser.parse_args()
-    validate_arguments(launch_arguments)
+    launch_arguments = parser.parse_args(namespace=ToothpickNamespace)
+    validate_arguments(launch_arguments())
 
     logger.info(f"Staring program with input {launch_arguments.input}")
 
