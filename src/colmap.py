@@ -1,10 +1,22 @@
 import argparse
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
 import pycolmap
+
+from config import load_calibration
+from detect_apriltag import detect_apriltag
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+RECONSTRUCTION_DIR = "sparse"
+IMAGE_DIR = "images"
+DATABASE = "database.db"
+APRIL_TAG_FOLDER = "april_tags"
 
 
 @dataclass
@@ -45,7 +57,6 @@ def colmap_cli() -> None:
 
     args = parser.parse_args()
     args = cast(ColmapNamespace, cast(object, args))
-    print(f"project dir : '{args.project_dir}'")
 
     if args.init:
         _ = initialize_colmap_project(Path(args.project_dir))
@@ -70,7 +81,7 @@ def colmap_cli() -> None:
 
 
 def initialize_colmap_project(
-    project_dir: Path = Path("colmap"),
+    project_dir: Path,
 ) -> tuple[Path, Path]:
     """
     Initialize a COLMAP project directory.
@@ -82,9 +93,9 @@ def initialize_colmap_project(
     database_path : Path
         Path where the COLMAP database should be created.
     """
-    sparse_dir = project_dir / "sparse"
-    image_path = project_dir / "images"
-    database_path = project_dir / "database.db"
+    sparse_dir = project_dir / RECONSTRUCTION_DIR
+    image_path = project_dir / IMAGE_DIR
+    database_path = project_dir / DATABASE
 
     # Create directory structure
     project_dir.mkdir(parents=True)
@@ -103,10 +114,10 @@ image_path={Path(image_path).resolve()}
     return project_dir, database_path
 
 
-def run_incremental_mapping(project_dir: Path = Path("colmap")):
-    sparse_dir = project_dir / "sparse"
-    image_path = project_dir / "images"
-    database_path = project_dir / "database.db"
+def run_incremental_mapping(project_dir: Path):
+    sparse_dir = project_dir / RECONSTRUCTION_DIR
+    image_path = project_dir / IMAGE_DIR
+    database_path = project_dir / DATABASE
 
     if image_path.is_dir() and not any(image_path.iterdir()):
         raise FileNotFoundError("No images were found in the image directory")
@@ -129,6 +140,20 @@ def run_incremental_mapping(project_dir: Path = Path("colmap")):
 
 def insert_april_tag_in_db(project_folder: Path):
 
+    if not (project_folder / APRIL_TAG_FOLDER).exists():
+        logger.info("Extracted data not fond, extracting apriltags from images.")
+        (project_folder / APRIL_TAG_FOLDER).mkdir()
+        for image in list((project_folder / IMAGE_DIR).glob("*.jpg")) + list(
+            (project_folder / IMAGE_DIR).glob("*.jpeg")
+        ):
+            _ = detect_apriltag(
+                image,
+                project_folder / APRIL_TAG_FOLDER,
+                False,
+                load_calibration(project_folder / IMAGE_DIR, True),
+            )
+
+    logger.info("Loading april tag.")
     data = {}
     for json_file in (project_folder / "april_tags").glob("*.json"):
         with json_file.open("r", encoding="utf-8") as f:

@@ -36,9 +36,9 @@ def apriltag_cli():
     input_is_dir = Path(launch_arguments.input).is_dir()
     if not input_is_dir:
         config = load_calibration(Path(launch_arguments.input).parent, True)
-        detection = handle_image(
-            launch_arguments.input,
-            launch_arguments.output,
+        detection = detect_apriltag(
+            Path(launch_arguments.input),
+            Path(launch_arguments.output),
             launch_arguments.export_image,
             config,
         )
@@ -50,16 +50,16 @@ def apriltag_cli():
         Path(launch_arguments.input).glob("*.jpeg")
     ):
         logger.info(f"Handling image {image}.")
-        _ = handle_image(
-            str(image),
-            launch_arguments.output,
+        _ = detect_apriltag(
+            image,
+            Path(launch_arguments.output),
             launch_arguments.export_image,
             config,
         )
 
 
-def handle_image(
-    image_path: str, output_folder: str, export: bool, config: DetectConfig
+def detect_apriltag(
+    image_path: Path, output_folder: Path, export: bool, config: DetectConfig
 ):
     loaded_image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
     assert loaded_image is not None
