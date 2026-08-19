@@ -1,16 +1,18 @@
 import argparse
 import logging
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
 
-class CommonNamespace(argparse.Namespace):
-    input: str = ""
-    output: str = ""
-    export_image: bool = False
-    show_images: bool = False
-    force: bool = False
-    verbose: bool = False
+@dataclass
+class CommonNamespace:
+    input: str
+    output: str
+    export_image: bool
+    show_images: bool
+    force: bool
+    verbose: bool
 
 
 def add_common_arguments(

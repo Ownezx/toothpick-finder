@@ -2,7 +2,9 @@ import argparse
 import json
 import logging
 import math
+from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import cv2
 import numpy as np
@@ -12,8 +14,9 @@ from config import DetectConfig, load_calibration
 from utils import CommonNamespace, add_common_arguments, validate_arguments
 
 
+@dataclass
 class ToothpickNamespace(CommonNamespace):
-    debug: bool = False
+    debug: bool
 
 
 logger = logging.getLogger(__name__)
@@ -34,8 +37,9 @@ def toothpick_cli():
         action="store_true",
         help="Export additional intermediate images.",
     )
-    launch_arguments = parser.parse_args(namespace=ToothpickNamespace)
-    validate_arguments(launch_arguments())
+    launch_arguments = parser.parse_args()
+    launch_arguments = cast(ToothpickNamespace, cast(object, launch_arguments))
+    validate_arguments(launch_arguments)
 
     logger.info(f"Staring program with input {launch_arguments.input}")
 

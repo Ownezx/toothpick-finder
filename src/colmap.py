@@ -1,13 +1,17 @@
 import argparse
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import pycolmap
 
 
-class ColmapNamespace(argparse.Namespace):
-    project_dir: str = ""
-    init: bool = False
+@dataclass
+class ColmapNamespace:
+    project_dir: str
+    action: str
+    init: bool
 
 
 def colmap_cli() -> None:
@@ -21,8 +25,8 @@ def colmap_cli() -> None:
     _ = parser.add_argument(
         "-p",
         "--project-dir",
-        type=Path,
-        default=Path("colmap_project"),
+        type=str,
+        default="colmap_project",
         help="Directory where the COLMAP project will be created.",
     )
     _ = parser.add_argument(
@@ -39,7 +43,9 @@ def colmap_cli() -> None:
         help="Action to do on the colmap project",
     )
 
-    args = parser.parse_args(namespace=ColmapNamespace)
+    args = parser.parse_args()
+    args = cast(ColmapNamespace, cast(object, args))
+    print(f"project dir : '{args.project_dir}'")
 
     if args.init:
         _ = initialize_colmap_project(Path(args.project_dir))
@@ -54,7 +60,7 @@ def colmap_cli() -> None:
     project_dir = Path(args.project_dir)
 
     if args.action == "MapImages":
-        run_incremental_mapping(args.project_dir)
+        run_incremental_mapping(Path(args.project_dir))
         return
     elif args.action == "InsertApril":
         insert_april_tag_in_db(project_dir)

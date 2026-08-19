@@ -3,6 +3,7 @@ import json
 import logging
 from pathlib import Path
 from tomllib import load
+from typing import cast
 
 import apriltag
 import cv2
@@ -26,8 +27,9 @@ def apriltag_cli():
         default_output="tfd_apriltag_output",
         object_name="AprilTag",
     )
-    launch_arguments = parser.parse_args(namespace=CommonNamespace)
-    validate_arguments(launch_arguments())
+    launch_arguments = parser.parse_args()
+    launch_arguments = cast(CommonNamespace, cast(object, launch_arguments))
+    validate_arguments(launch_arguments)
 
     logger.info(f"Staring program with input {launch_arguments.input}")
 
