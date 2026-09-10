@@ -86,6 +86,10 @@ Before going on the field several
 - Printed non reflective the april markers in the ToPrint folder on a rigid flat surface
 - Printed calibration sheet in the ToPrint folder on a rigid flat surface
 
+#inline-note(
+  "TODO: consider using different color to minimize collisions, giving instruction on stick placement to minimize collision, offseting the apriltags on cubes to allow for better detection.",
+)
+
 == Measurement condition
 
 Before taking any measurements the following must be verified:
